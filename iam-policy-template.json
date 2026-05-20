@@ -1,0 +1,95 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AthenaQueryExecution",
+      "Effect": "Allow",
+      "Action": [
+        "athena:StartQueryExecution",
+        "athena:GetQueryExecution",
+        "athena:GetQueryResults",
+        "athena:StopQueryExecution",
+        "athena:GetWorkGroup",
+        "athena:GetDataCatalog",
+        "athena:GetDatabase",
+        "athena:GetTableMetadata",
+        "athena:ListQueryExecutions",
+        "athena:ListWorkGroups"
+      ],
+      "Resource": [
+        "arn:aws:athena:*:*:workgroup/bandsintown-dbt-*",
+        "arn:aws:athena:*:*:datacatalog/*"
+      ]
+    },
+    {
+      "Sid": "S3RawDataRead",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::bandsintown-raw-data",
+        "arn:aws:s3:::bandsintown-raw-data/*"
+      ]
+    },
+    {
+      "Sid": "S3AnalyticsReadWrite",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts",
+        "s3:ListBucketMultipartUploads"
+      ],
+      "Resource": [
+        "arn:aws:s3:::bandsintown-dbt-analytics",
+        "arn:aws:s3:::bandsintown-dbt-analytics/*"
+      ]
+    },
+    {
+      "Sid": "GlueCatalogAccess",
+      "Effect": "Allow",
+      "Action": [
+        "glue:GetDatabase",
+        "glue:GetDatabases",
+        "glue:GetTable",
+        "glue:GetTables",
+        "glue:GetPartition",
+        "glue:GetPartitions",
+        "glue:CreateTable",
+        "glue:UpdateTable",
+        "glue:DeleteTable",
+        "glue:BatchCreatePartition",
+        "glue:BatchDeletePartition",
+        "glue:BatchUpdatePartition",
+        "glue:CreatePartition",
+        "glue:DeletePartition",
+        "glue:UpdatePartition"
+      ],
+      "Resource": [
+        "arn:aws:glue:*:*:catalog",
+        "arn:aws:glue:*:*:database/bandsintown_raw",
+        "arn:aws:glue:*:*:database/bandsintown_analytics_*",
+        "arn:aws:glue:*:*:table/bandsintown_raw/*",
+        "arn:aws:glue:*:*:table/bandsintown_analytics_*/*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchLogging",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:log-group:/aws/dbt/bandsintown*"
+    }
+  ]
+}
+

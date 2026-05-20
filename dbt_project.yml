@@ -1,0 +1,63 @@
+name: 'bandsintown'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'bandsintown'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+# Require explicit project references in sources and models
+require-dbt-version: [">=1.7.0", "<2.0.0"]
+
+# Global model configurations
+models:
+  bandsintown:
+    # Staging models - typically views for initial transformations
+    staging:
+      +materialized: view
+      +tags: ["staging"]
+      +schema: staging
+    
+    # Intermediate models - views for business logic
+    intermediate:
+      +materialized: view
+      +tags: ["intermediate"]
+      +schema: intermediate
+    
+    # Marts - tables for final consumption
+    marts:
+      +materialized: table
+      +tags: ["marts"]
+      +schema: analytics
+
+# Documentation
+vars:
+  # Timezone for timestamp conversions
+  timezone: 'America/Los_Angeles'
+  
+  # Default start date for incremental models
+  default_start_date: '2024-01-01'
+
+# Test configurations
+tests:
+  +store_failures: true
+  +schema: dbt_test_failures
+
+# Seeds configuration
+seeds:
+  bandsintown:
+    +schema: seed_data
+    +quote_columns: false
+

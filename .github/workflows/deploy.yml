@@ -1,0 +1,228 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://airflow.staging.bandsintown.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Deploy dbt project to S3
+        run: |
+          aws s3 sync . s3://bandsintown-dbt-staging/ \
+            --exclude ".git/*" \
+            --exclude ".venv/*" \
+            --exclude ".idea/*" \
+            --exclude "target/*" \
+            --exclude "dbt_packages/*" \
+            --exclude ".env" \
+            --delete
+      
+      - name: Deploy Airflow DAG
+        run: |
+          aws s3 cp airflow/dags/bandsintown_dbt_dag.py \
+            s3://bandsintown-airflow-staging/dags/bandsintown_dbt_dag.py
+      
+      - name: Run integration tests
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}
+          DBT_TARGET: staging
+          DBT_ATHENA_S3_STAGING_DIR: ${{ secrets.DBT_ATHENA_S3_STAGING_DIR_STAGING }}
+          DBT_ATHENA_WORKGROUP: ${{ secrets.DBT_ATHENA_WORKGROUP_STAGING }}
+        run: |
+          dbt debug --profiles-dir . --target staging
+          dbt run --profiles-dir . --target staging --select stg_events
+          dbt test --profiles-dir . --target staging --select stg_events
+      
+      - name: Generate documentation
+        run: |
+          dbt docs generate --profiles-dir . --target staging
+          aws s3 sync target/ s3://bandsintown-dbt-analytics/staging/docs/ \
+            --exclude "*" \
+            --include "*.html" \
+            --include "*.json"
+      
+      - name: Notify Slack - Success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: '✅ bit-dbt deployed to staging successfully',
+              attachments: [{
+                color: 'good',
+                fields: [{
+                  title: 'Environment',
+                  value: 'Staging',
+                  short: true
+                }, {
+                  title: 'Commit',
+                  value: '${{ github.sha }}',
+                  short: true
+                }]
+              }]
+            }
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: success()
+
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.event.inputs.environment == 'prod'
+    environment:
+      name: production
+      url: https://airflow.bandsintown.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Create backup
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          aws s3 sync s3://bandsintown-dbt-prod/ \
+            s3://bandsintown-dbt-backups/prod_${TIMESTAMP}/ \
+            --exclude "target/*" \
+            --exclude "logs/*"
+      
+      - name: Deploy dbt project to S3
+        run: |
+          aws s3 sync . s3://bandsintown-dbt-prod/ \
+            --exclude ".git/*" \
+            --exclude ".venv/*" \
+            --exclude ".idea/*" \
+            --exclude "target/*" \
+            --exclude "dbt_packages/*" \
+            --exclude ".env" \
+            --delete
+      
+      - name: Deploy Airflow DAG
+        run: |
+          aws s3 cp airflow/dags/bandsintown_dbt_dag.py \
+            s3://bandsintown-airflow-prod/dags/bandsintown_dbt_dag.py
+      
+      - name: Verify deployment
+        env:
+          DBT_PROFILES_DIR: ${{ github.workspace }}
+          DBT_TARGET: prod
+          DBT_ATHENA_S3_STAGING_DIR: ${{ secrets.DBT_ATHENA_S3_STAGING_DIR_PROD }}
+          DBT_ATHENA_WORKGROUP: ${{ secrets.DBT_ATHENA_WORKGROUP_PROD }}
+        run: |
+          dbt debug --profiles-dir . --target prod
+          dbt compile --profiles-dir . --target prod
+      
+      - name: Generate production documentation
+        run: |
+          dbt docs generate --profiles-dir . --target prod
+          aws s3 sync target/ s3://bandsintown-dbt-analytics/prod/docs/ \
+            --exclude "*" \
+            --include "*.html" \
+            --include "*.json"
+      
+      - name: Notify Slack - Production Success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: '🚀 bit-dbt deployed to PRODUCTION successfully',
+              attachments: [{
+                color: 'good',
+                fields: [{
+                  title: 'Environment',
+                  value: 'Production',
+                  short: true
+                }, {
+                  title: 'Commit',
+                  value: '${{ github.sha }}',
+                  short: true
+                }, {
+                  title: 'Deployed by',
+                  value: '${{ github.actor }}',
+                  short: true
+                }]
+              }]
+            }
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: success()
+      
+      - name: Notify on failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: '❌ bit-dbt deployment to PRODUCTION FAILED',
+              attachments: [{
+                color: 'danger',
+                fields: [{
+                  title: 'Environment',
+                  value: 'Production',
+                  short: true
+                }, {
+                  title: 'Commit',
+                  value: '${{ github.sha }}',
+                  short: true
+                }]
+              }]
+            }
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: failure()
+

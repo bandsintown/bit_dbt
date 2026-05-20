@@ -1,0 +1,48 @@
+# profiles.yml - dbt profile template
+# This file should NOT be committed with real credentials
+# Use environment variables for all sensitive information
+
+bandsintown:
+  target: dev
+  outputs:
+    dev:
+      type: athena
+      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bandsintown-dbt-analytics/dev/') }}"
+      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bandsintown-dbt-analytics/dev/data/') }}"
+      region_name: "{{ env_var('AWS_REGION', 'us-east-1') }}"
+      database: "{{ env_var('DBT_ATHENA_DATABASE', 'bandsintown_analytics_dev') }}"
+      schema: analytics
+      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-dev') }}"
+      num_retries: 3
+      threads: 4
+      # EMR Serverless configuration
+      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-dev') }}"
+      poll_interval: 5
+      aws_profile_name: "{{ env_var('AWS_PROFILE', '') }}"
+      
+    staging:
+      type: athena
+      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bandsintown-dbt-analytics/staging/') }}"
+      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bandsintown-dbt-analytics/staging/data/') }}"
+      region_name: "{{ env_var('AWS_REGION', 'us-east-1') }}"
+      database: "{{ env_var('DBT_ATHENA_DATABASE', 'bandsintown_analytics_staging') }}"
+      schema: analytics
+      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-staging') }}"
+      num_retries: 3
+      threads: 8
+      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-staging') }}"
+      poll_interval: 5
+      
+    prod:
+      type: athena
+      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bandsintown-dbt-analytics/prod/') }}"
+      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bandsintown-dbt-analytics/prod/data/') }}"
+      region_name: "{{ env_var('AWS_REGION', 'us-east-1') }}"
+      database: "{{ env_var('DBT_ATHENA_DATABASE', 'bandsintown_analytics_prod') }}"
+      schema: analytics
+      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-prod') }}"
+      num_retries: 5
+      threads: 16
+      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-prod') }}"
+      poll_interval: 5
+

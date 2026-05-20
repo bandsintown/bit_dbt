@@ -1,0 +1,12 @@
+steps:
+  - label: ":aws: Upload scripts for Airflow DAG"
+    key: "upload-airflow-scripts"
+    branches: "main"
+    commands:
+      - "set -euo pipefail"
+      - 'test -n "${DAG_SCRIPTS_BUCKET:-}" || (echo "DAG_SCRIPTS_BUCKET is required" && exit 1)'
+      - 'S3_PREFIX="${DAG_SCRIPTS_PREFIX:-dags/dependencies/dbt/scripts}"'
+      - 'echo "Syncing scripts/ to s3://${DAG_SCRIPTS_BUCKET}/${S3_PREFIX}/"'
+      - 'aws s3 sync scripts/ "s3://${DAG_SCRIPTS_BUCKET}/${S3_PREFIX}/" --delete --exact-timestamps'
+      - 'echo "Done"'
+

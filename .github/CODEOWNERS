@@ -1,0 +1,17 @@
+# Data Platform Team owns all files
+*       @bandsintown/data-platform-team
+
+# Airflow DAGs require additional review from data engineering leads
+/airflow/       @bandsintown/data-platform-team @bandsintown/data-engineering-leads
+
+# Infrastructure and deployment scripts require DevOps review
+/scripts/deploy.sh      @bandsintown/devops-team @bandsintown/data-platform-team
+/iam-policy-template.json       @bandsintown/devops-team @bandsintown/data-platform-team
+
+# GitHub workflows require DevOps approval
+/.github/workflows/     @bandsintown/devops-team @bandsintown/data-platform-team
+
+# Documentation can be updated by analytics team
+/README.md      @bandsintown/data-platform-team @bandsintown/analytics-team
+/*.md   @bandsintown/data-platform-team @bandsintown/analytics-team
+

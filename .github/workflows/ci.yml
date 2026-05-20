@@ -1,0 +1,159 @@
+name: CI - dbt Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - develop
+
+jobs:
+  dbt-compile:
+    name: Compile dbt Models
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Set environment variables
+        run: |
+          echo "DBT_PROFILES_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          echo "DBT_TARGET=dev" >> $GITHUB_ENV
+      
+      - name: Run dbt debug
+        run: dbt debug --profiles-dir . --target dev
+      
+      - name: Run dbt compile
+        run: dbt compile --profiles-dir . --target dev
+      
+      - name: Upload compiled artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-models
+          path: target/
+          retention-days: 7
+
+  dbt-test:
+    name: Test dbt Models
+    runs-on: ubuntu-latest
+    needs: dbt-compile
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Set environment variables
+        run: |
+          echo "DBT_PROFILES_DIR=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          echo "DBT_TARGET=dev" >> $GITHUB_ENV
+      
+      - name: Run dbt parse
+        run: dbt parse --profiles-dir . --target dev
+      
+      - name: Run dbt tests (dry-run)
+        run: dbt test --profiles-dir . --target dev --select source:*
+        continue-on-error: true
+
+  sql-lint:
+    name: SQL Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      
+      - name: Install sqlfluff
+        run: pip install sqlfluff sqlfluff-templater-dbt
+      
+      - name: Lint SQL files
+        run: |
+          sqlfluff lint models/ --dialect athena --format github-annotation
+        continue-on-error: true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  notify:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [dbt-compile, dbt-test, sql-lint, security-scan]
+    if: failure()
+    
+    steps:
+      - name: Send Slack notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'CI pipeline failed for bit-dbt'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
+

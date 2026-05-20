@@ -1,0 +1,53 @@
+version: 2
+
+sources:
+  - name: bandsintown_raw
+    description: Raw data ingested from various sources via EMR pipelines
+    database: "{{ env_var('RAW_DATA_DATABASE', 'bandsintown_raw') }}"
+    schema: bandsintown_raw
+    
+    tables:
+      - name: events
+        description: Raw events data from Bandsintown platform
+        columns:
+          - name: event_id
+            description: Primary key for events
+            tests:
+              - not_null
+              - unique
+          
+          - name: artist_id
+            description: Foreign key to artists
+            tests:
+              - not_null
+          
+          - name: venue_id
+            description: Foreign key to venues
+          
+          - name: event_date
+            description: Date and time of the event
+            tests:
+              - not_null
+          
+          - name: event_status
+            description: Status of the event (upcoming, cancelled, past)
+          
+          - name: ticket_url
+            description: URL to purchase tickets
+          
+          - name: created_at
+            description: Timestamp when record was created
+            tests:
+              - not_null
+          
+          - name: updated_at
+            description: Timestamp when record was last updated
+        
+        # Freshness check - expect data within the last 24 hours
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+        
+        # Data is loaded daily
+        loaded_at_field: updated_at
+
