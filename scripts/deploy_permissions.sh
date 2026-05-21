@@ -3,7 +3,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SERVERLESS_CONFIG="$ROOT_DIR/environment/serverless.permissions.yml"
+SERVICE_DIR="$ROOT_DIR/environment"
+SERVERLESS_CONFIG_FILE="serverless.permissions.yml"
 
 usage() {
   cat <<EOF
@@ -31,17 +32,17 @@ echo "AWS_REGION=$AWS_REGION"
 export AWS_SDK_LOAD_CONFIG=1
 export SLS_DEBUG="${SLS_DEBUG:-*}"
 
-# Run from project root so relative paths in serverless config resolve consistently in CI.
-cd "$ROOT_DIR"
+# Run inside the Serverless service directory.
+cd "$SERVICE_DIR"
 
-# Prefer a preinstalled Serverless binary (common in CI). Fall back to npx package execution.
-if command -v sls >/dev/null 2>&1; then
+# Prefer npx Serverless v3 to avoid old global binaries in CI.
+if command -v npx >/dev/null 2>&1; then
+  # npm v6/v7 compatible form; do not append an extra "serverless" token.
+  SLS_CMD=(npx -y serverless@3)
+elif command -v sls >/dev/null 2>&1; then
   SLS_CMD=(sls)
 elif command -v serverless >/dev/null 2>&1; then
   SLS_CMD=(serverless)
-elif command -v npx >/dev/null 2>&1; then
-  # npm v6/v7 compatible form; do not append an extra "serverless" token.
-  SLS_CMD=(npx -y serverless@3)
 else
   echo "[ERROR] Neither serverless/sls nor npx is available." >&2
   exit 1
@@ -49,7 +50,7 @@ fi
 
 DEPLOY_ARGS=(
   deploy
-  --config "$SERVERLESS_CONFIG"
+  --config "$SERVERLESS_CONFIG_FILE"
   --stage "$STAGE"
   --region "$AWS_REGION"
 )
