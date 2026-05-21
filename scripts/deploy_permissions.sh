@@ -35,18 +35,12 @@ export SLS_DEBUG="${SLS_DEBUG:-*}"
 # Run inside the Serverless service directory.
 cd "$SERVICE_DIR"
 
-# Prefer npx Serverless v3 to avoid old global binaries in CI.
-if command -v npx >/dev/null 2>&1; then
-  # npm v6/v7 compatible form; do not append an extra "serverless" token.
-  SLS_CMD=(npx -y serverless@3)
-elif command -v sls >/dev/null 2>&1; then
-  SLS_CMD=(sls)
-elif command -v serverless >/dev/null 2>&1; then
-  SLS_CMD=(serverless)
-else
-  echo "[ERROR] Neither serverless/sls nor npx is available." >&2
+# Use npm v6/v7 compatible npx syntax to pin Serverless v3 and avoid global CLI conflicts.
+if ! command -v npx >/dev/null 2>&1; then
+  echo "[ERROR] npx is required to run pinned Serverless v3 in CI." >&2
   exit 1
 fi
+SLS_CMD=(npx -p serverless@3 sls)
 
 DEPLOY_ARGS=(
   deploy
