@@ -31,15 +31,21 @@ echo "AWS_REGION=$AWS_REGION"
 export AWS_SDK_LOAD_CONFIG=1
 export SLS_DEBUG="${SLS_DEBUG:-*}"
 
-if ! command -v npx >/dev/null 2>&1; then
-  echo "[ERROR] npx is required (install Node.js/npm)." >&2
-  exit 1
-fi
-
 # Run from project root so relative paths in serverless config resolve consistently in CI.
 cd "$ROOT_DIR"
-# Use explicit package+binary form so npx does not resolve an unrelated CLI.
-SLS_CMD=(npx --yes --package "serverless@3" serverless)
+
+# Prefer a preinstalled Serverless binary (common in CI). Fall back to npx package execution.
+if command -v sls >/dev/null 2>&1; then
+  SLS_CMD=(sls)
+elif command -v serverless >/dev/null 2>&1; then
+  SLS_CMD=(serverless)
+elif command -v npx >/dev/null 2>&1; then
+  # npm v6/v7 compatible form; do not append an extra "serverless" token.
+  SLS_CMD=(npx -y serverless@3)
+else
+  echo "[ERROR] Neither serverless/sls nor npx is available." >&2
+  exit 1
+fi
 
 DEPLOY_ARGS=(
   deploy
