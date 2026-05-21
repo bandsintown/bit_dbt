@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: fct_featured_events_kpis
+    description: Featured events KPI mart combining impressions, clicks, and event metadata.
+    columns:
+      - name: date
+      - name: source
+      - name: artist_event_int_id
+      - name: nb
+
+  - name: int_kpis_by_day
+    description: Daily KPI aggregates across email, ticket clicks, and pixel impression sources.
+
+  - name: int_event_id_with_fe_source
+    description: Canonical featured-event source per artist event id.
+

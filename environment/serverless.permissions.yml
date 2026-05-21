@@ -1,0 +1,19 @@
+service: bit-dbt-permissions
+
+provider:
+  name: aws
+  runtime: python3.11
+  profile: ${opt:aws-profile}
+  stage: ${opt:stage, 'prod'}
+  region: ${opt:region, 'us-east-1'}
+  logRetentionInDays: 14
+  versionFunctions: false
+  deploymentBucket:
+    name: bit-${opt:stage, 'prod'}-artifacts
+
+custom:
+  vars: ${file(variables.yml):${self:provider.stage}}
+
+resources:
+  - ${file(resources/iam.yml)}
+

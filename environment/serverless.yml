@@ -1,0 +1,57 @@
+service: bit-dbt
+
+provider:
+  name: aws
+  runtime: python3.11
+  profile: ${opt:aws-profile}
+  stage: ${opt:stage}
+  region: ${opt:region, 'us-east-1'}
+  logRetentionInDays: 14
+  versionFunctions: false
+  deploymentBucket:
+    name: bit-${opt:stage}-artifacts
+  environment:
+    ENVIRONMENT: ${opt:stage}
+    SERVICE_NAME: ${self:service}
+  iamManagedPolicies: []
+  iamRoleStatements: []
+
+
+package:
+  # Functions share requirements and source files. They just act as different endpoints.
+  # Otherwise no need to be in the same service
+  individually: false
+  # The src directory must be added to Python sys.path in src/lambdas/__init__.py.
+  # To support local imports within src/ even when the lambda hander is imported from outside
+  exclude:
+    - '**/*'
+  include:
+    - 'src/**'
+    - '!src/__*/**'
+    - '!src/.*/**'
+    - '!src/*_tests/**'
+    - '!src/*-tests/**'
+    - '!src/tests/**'
+    - 'requirements.txt'
+
+
+custom:
+  # Cf. https://www.serverless.com/plugins/serverless-python-requirements
+  service: ${opt:stage}-${self:service}
+  vars: ${file(variables.yml):${self:provider.stage}}
+
+  pythonRequirements:
+    dockerizePip: non-linux  # The version of Python runtime must be available locally
+    slim: true
+
+resources:
+#  - ${file(resources/s3.yml)}
+  - ${file(resources/PartnerDataFeedsExport.yml)}
+  - ${file(resources/DailyKPI.yml)}
+  - ${file(resources/DailyKPI-Hive.yml)}
+  - ${file(resources/ArtistPTT.yml)}
+  - ${file(resources/NewUsersEmailNotifications.yml)}
+  - ${file(resources/ArtistInsights.yml)}
+  # - ${file(resources/iam.yml)}
+  # - ${file(resources/outputs.yml)}
+  # - ${file(resources/airflow.yml)}

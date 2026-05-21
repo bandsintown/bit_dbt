@@ -1,0 +1,10 @@
+prod:
+  airflow_environment_bucket_name: 'bit-data-pipeline'
+  account_id: 052510803641
+  region_name: us-east-1
+  vpc:
+    securityGroupIds:
+      - sg-04f40793dcc3482c8
+    subnetIds:
+      - subnet-04d90a64db60123ad
+      - subnet-0409851ea2900b155

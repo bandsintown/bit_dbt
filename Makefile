@@ -1,4 +1,4 @@
-.PHONY: help setup install clean test run docs deploy
+.PHONY: help setup install clean test run docs deploy deploy-permissions
 
 # Default target
 help:
@@ -13,6 +13,7 @@ help:
 	@echo "make deploy-dev     - Deploy to development"
 	@echo "make deploy-staging - Deploy to staging"
 	@echo "make deploy-prod    - Deploy to production"
+	@echo "make deploy-permissions STAGE=prod [AWS_PROFILE=default] [AWS_REGION=us-east-1] - Deploy IAM permissions stack"
 	@echo "make debug          - Run dbt debug"
 	@echo "make compile        - Compile dbt models"
 	@echo "make lint           - Lint SQL files"
@@ -99,6 +100,11 @@ deploy-staging:
 # Deploy to production
 deploy-prod:
 	DBT_TARGET=prod ./scripts/deploy.sh prod
+
+# Deploy IAM permissions using Serverless
+deploy-permissions:
+	@test -n "$(STAGE)" || (echo "Error: STAGE is required. Usage: make deploy-permissions STAGE=prod [AWS_PROFILE=default] [AWS_REGION=us-east-1]" && exit 1)
+	./scripts/deploy_permissions.sh $(STAGE) $(AWS_PROFILE) $(or $(AWS_REGION),us-east-1)
 
 # Full refresh all models
 refresh:

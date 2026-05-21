@@ -42,6 +42,12 @@ models:
       +tags: ["marts"]
       +schema: analytics
 
+    # Feature events domain models
+    feature_events:
+      +materialized: view
+      +tags: ["feature_events"]
+      +schema: analytics
+
 # Documentation
 vars:
   # Timezone for timestamp conversions

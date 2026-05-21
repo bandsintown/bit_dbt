@@ -246,6 +246,17 @@ dbt run --full-refresh
 ### Production
 Deployed via Airflow DAG automatically after EMR ingestion completes.
 
+### IAM Permissions (Serverless)
+
+Deploy the IAM permissions stack with:
+
+```bash
+make deploy-permissions STAGE=prod AWS_PROFILE=default AWS_REGION=us-east-1
+```
+
+There is also a GitHub Actions pipeline at `.github/workflows/deploy-serverless-permissions.yml`.
+It deploys automatically on changes to the IAM Serverless config and can be run manually via workflow dispatch.
+
 ## 📖 Documentation
 
 Generate and view dbt documentation:

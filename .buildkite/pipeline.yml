@@ -10,3 +10,11 @@ steps:
       - 'aws s3 sync scripts/ "s3://${DAG_SCRIPTS_BUCKET}/${S3_PREFIX}/" --delete --exact-timestamps'
       - 'echo "Done"'
 
+  - label: ":serverless: Deploy Serverless permissions"
+    key: "deploy-serverless-permissions"
+    branches: "main"
+    commands:
+      - "set -euo pipefail"
+      - 'test -n "${PERMISSIONS_STAGE:-}" || (echo "PERMISSIONS_STAGE is required" && exit 1)'
+      - './scripts/deploy_permissions.sh "${PERMISSIONS_STAGE}" "${AWS_PROFILE:-}" "${AWS_REGION:-us-east-1}"'
+

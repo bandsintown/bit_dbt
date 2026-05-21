@@ -1,0 +1,215 @@
+Resources:
+  MWAAExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - airflow-env.amazonaws.com
+                - airflow.amazonaws.com
+            Action:
+             - "sts:AssumeRole"
+      Path: "/service-role/"
+
+  MWAAExecutionPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref MWAAExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: airflow:PublishMetrics
+            Resource:
+              # - !GetAtt MWAAEnvironment.Arn
+              - !Sub "arn:aws:airflow:${AWS::Region}:${AWS::AccountId}:environment/bit-dbt"
+          - Effect: Deny
+            Action: s3:ListAllMyBuckets
+            Resource:
+              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}"
+              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}/*"
+          - Effect: Allow
+            Action:
+              - "s3:GetObject*"
+              - "s3:GetBucket*"
+              - "s3:List*"
+            Resource:
+              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}"
+              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}/*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:CreateLogGroup
+              - logs:PutLogEvents
+              - logs:GetLogEvents
+              - logs:GetLogRecord
+              - logs:GetLogGroupFields
+              - logs:GetQueryResults
+              - logs:DescribeLogGroups
+            Resource: "*"
+          - Effect: Allow
+            Action: cloudwatch:PutMetricData
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:ReceiveMessage
+              - sqs:SendMessage
+            Resource:
+              - !Sub "arn:aws:sqs:${AWS::Region}:*:airflow-celery-*"
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+              - "kms:GenerateDataKey*"
+              - kms:Encrypt
+            NotResource: !Sub "arn:aws:kms:*:${AWS::AccountId}:key/*"
+            Condition:
+              StringLike:
+                "kms:ViaService":
+                  - !Sub "sqs.${AWS::Region}.amazonaws.com"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  # MWAAExecutionRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - airflow-env.amazonaws.com
+  #               - airflow.amazonaws.com
+  #           Action:
+  #            - "sts:AssumeRole"
+  #     Path: "/service-role/"
+      
+  # MWAAExecutionPolicy:
+  #   Type: AWS::IAM::ManagedPolicy
+  #   Properties:
+  #     Roles:
+  #       - !Ref MWAAExecutionRole
+  #     PolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Effect: Allow
+  #           Action: airflow:PublishMetrics
+  #           Resource:
+  #             - Fn::Join:
+  #               - ''
+  #               - - 'arn:aws:airflow:'
+  #                 - !Ref 'AWS::Region'
+  #                 - ':'
+  #                 - !Ref 'AWS::AccountId'
+  #                 - ':environment/'
+  #                 - 'bit-dbt'
+  #         - Effect: Deny
+  #           Action: s3:ListAllMyBuckets
+  #           Resource:
+  #             - "arn:aws:s3:::bit-data-pipeline"
+  #         - Effect: Allow
+  #           Action:
+  #             - "s3:*"
+  #           Resource:
+  #             - "arn:aws:s3:::bit-data-pipeline"
+  #             - "arn:aws:s3:::bit-data-pipeline/*"
+  #         - Effect: Allow
+  #           Action:
+  #             - logs:DescribeLogGroups
+  #           Resource: "*"
+  #         - Effect: Allow
+  #           Action:
+  #             - logs:CreateLogStream
+  #             - logs:CreateLogGroup
+  #             - logs:PutLogEvents
+  #             - logs:GetLogEvents
+  #             - logs:GetLogRecord
+  #             - logs:GetLogGroupFields
+  #             - logs:GetQueryResults
+  #             - logs:DescribeLogGroups
+  #           Resource: "*"
+  #         - Effect: Allow
+  #           Action: cloudwatch:PutMetricData
+  #           Resource: "*"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      # Policies:
+      # - PolicyName: MWAAExecutionRolePolicy
+      #   PolicyDocument:
+      #     Statement:
+      #       - Effect: Allow
+      #         Action:
+      #           - airflow:PublishMetrics
+      #         Resource: '*'
+      #       - Effect: Allow
+      #         Action:
+      #           - s3:*
+      #         Resource: '*'
+      #       - Effect: Allow
+      #         Action:
+      #           - logs:DescribeLogGroups
+      #         Resource: "*"
+      #       - Effect: Allow
+      #         Action: cloudwatch:PutMetricData
+      #         Resource: "*"
+
+  # MWAAExecutionPolicy:
+  #   DependsOn: EnvironmentBucket
+  #   Type: AWS::IAM::ManagedPolicy
+  #   Properties:
+  #     Roles:
+  #       - Ref: MWAAExecutionRole
+  #     PolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Effect: Allow
+  #           Action: airflow:PublishMetrics
+  #           Resource:
+  #             - !GetAtt: MWAAEnvironment.Arn
+  #         - Effect: Allow
+  #           Action:
+  #             - "s3:GetObject*"
+  #             - "s3:GetBucket*"
+  #             - "s3:List*"
+  #           Resource:
+  #             - !Sub "${MWAAEnvironmentBucket.Arn}"
+  #             - !Sub "${MWAAEnvironmentBucket.Arn}/*"
+  #         - Effect: Allow
+  #           Action:
+  #             - logs:DescribeLogGroups
+  #           Resource: "*"
+  #         - Effect: Allow
+  #           Action: cloudwatch:PutMetricData
+  #           Resource: "*"
