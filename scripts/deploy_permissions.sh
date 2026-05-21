@@ -36,7 +36,9 @@ if ! command -v npx >/dev/null 2>&1; then
   exit 1
 fi
 
-SLS_CMD=(npx --yes --prefix "$ROOT_DIR" serverless)
+# Run from project root so relative paths in serverless config resolve consistently in CI.
+cd "$ROOT_DIR"
+SLS_CMD=(npx --yes serverless@3)
 
 DEPLOY_ARGS=(
   deploy
