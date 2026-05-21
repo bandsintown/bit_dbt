@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
@@ -11,7 +11,7 @@ Usage: ./scripts/deploy_permissions.sh <stage> [aws-profile] [region]
 
 Examples:
   ./scripts/deploy_permissions.sh prod
-  ./scripts/deploy_permissions.sh prod default us-east-1
+  ./scripts/deploy_permissions.sh prod bit-prod us-east-1
 EOF
 }
 
@@ -21,15 +21,22 @@ if [ $# -lt 1 ]; then
 fi
 
 STAGE="$1"
-AWS_PROFILE="${2:-}"
+AWS_PROFILE="${2:-bit-$STAGE}"
 AWS_REGION="${3:-us-east-1}"
 
-if ! command -v serverless >/dev/null 2>&1; then
-  echo "[INFO] serverless not found globally, using npx"
-  SLS_CMD=(npx --yes serverless@3)
-else
-  SLS_CMD=(serverless)
+echo "STAGE=$STAGE"
+echo "AWS_PROFILE=$AWS_PROFILE"
+echo "AWS_REGION=$AWS_REGION"
+
+export AWS_SDK_LOAD_CONFIG=1
+export SLS_DEBUG="${SLS_DEBUG:-*}"
+
+if ! command -v npx >/dev/null 2>&1; then
+  echo "[ERROR] npx is required (install Node.js/npm)." >&2
+  exit 1
 fi
+
+SLS_CMD=(npx --yes --prefix "$ROOT_DIR" serverless)
 
 DEPLOY_ARGS=(
   deploy
@@ -38,9 +45,7 @@ DEPLOY_ARGS=(
   --region "$AWS_REGION"
 )
 
-if [ -n "$AWS_PROFILE" ]; then
-  DEPLOY_ARGS+=(--aws-profile "$AWS_PROFILE")
-fi
+DEPLOY_ARGS+=(--aws-profile "$AWS_PROFILE")
 
 "${SLS_CMD[@]}" "${DEPLOY_ARGS[@]}"
 

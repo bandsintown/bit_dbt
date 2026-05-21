@@ -46,12 +46,7 @@ custom:
 
 resources:
 #  - ${file(resources/s3.yml)}
-  - ${file(resources/PartnerDataFeedsExport.yml)}
-  - ${file(resources/DailyKPI.yml)}
-  - ${file(resources/DailyKPI-Hive.yml)}
-  - ${file(resources/ArtistPTT.yml)}
-  - ${file(resources/NewUsersEmailNotifications.yml)}
-  - ${file(resources/ArtistInsights.yml)}
+
   # - ${file(resources/iam.yml)}
   # - ${file(resources/outputs.yml)}
   # - ${file(resources/airflow.yml)}
