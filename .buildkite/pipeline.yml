@@ -1,9 +1,25 @@
 steps:
+  - block: "Choose deployment path"
+    key: "choose-deploy-path"
+    branches: "main"
+    fields:
+      - select: "Deployment path"
+        key: "deploy_path"
+        required: true
+        options:
+          - label: "Upload scripts to S3"
+            value: "upload_s3"
+          - label: "Deploy Serverless permissions"
+            value: "serverless_permissions"
+
   - label: ":aws: Upload scripts for Airflow DAG"
     key: "upload-airflow-scripts"
+    depends_on: "choose-deploy-path"
     branches: "main"
     commands:
       - "set -euo pipefail"
+      - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path)"'
+      - 'if [ "$DEPLOY_PATH" != "upload_s3" ]; then echo "Skipping upload step (selected path: $DEPLOY_PATH)"; exit 0; fi'
       - 'test -n "${DAG_SCRIPTS_BUCKET:-}" || (echo "DAG_SCRIPTS_BUCKET is required" && exit 1)'
       - 'S3_PREFIX="${DAG_SCRIPTS_PREFIX:-dags/dependencies/dbt/scripts}"'
       - 'echo "Syncing scripts/ to s3://${DAG_SCRIPTS_BUCKET}/${S3_PREFIX}/"'
@@ -12,9 +28,12 @@ steps:
 
   - label: ":serverless: Deploy Serverless permissions"
     key: "deploy-serverless-permissions"
+    depends_on: "choose-deploy-path"
     branches: "main"
     commands:
       - "set -euo pipefail"
+      - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path)"'
+      - 'if [ "$DEPLOY_PATH" != "serverless_permissions" ]; then echo "Skipping serverless step (selected path: $DEPLOY_PATH)"; exit 0; fi'
       - 'test -n "${PERMISSIONS_STAGE:-}" || (echo "PERMISSIONS_STAGE is required" && exit 1)'
       - './scripts/deploy_permissions.sh "${PERMISSIONS_STAGE}" "${AWS_PROFILE:-}" "${AWS_REGION:-us-east-1}"'
 
