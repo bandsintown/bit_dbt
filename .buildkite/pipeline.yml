@@ -22,34 +22,9 @@ steps:
           - label: "Production"
             value: "prod"
 
-  - label: ":aws: Upload scripts for Airflow DAG"
-    key: "upload-airflow-scripts"
+  - label: ":pipeline: Route deployment"
+    key: "route-deployment"
     depends_on: "choose-deploy-path"
     branches: "main"
     commands:
-      - "set -euo pipefail"
-      - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path 2>/dev/null || true)"'
-      - 'ENVIRONMENT="$(buildkite-agent meta-data get environment 2>/dev/null || true)"'
-      - 'test -n "$DEPLOY_PATH" || (echo "deploy_path meta-data not set — did the block step complete?" && exit 1)'
-      - 'test -n "$ENVIRONMENT" || (echo "environment meta-data not set — did the block step complete?" && exit 1)'
-      - 'if [ "$DEPLOY_PATH" != "upload_s3" ]; then echo "Skipping upload step (selected path: $DEPLOY_PATH)"; exit 0; fi'
-      - 'echo "Deploying to environment: $ENVIRONMENT"'
-      - 'DAG_SCRIPTS_BUCKET="${DAG_SCRIPTS_BUCKET:-bit-${ENVIRONMENT}-artifacts}"'
-      - 'S3_PREFIX="${DAG_SCRIPTS_PREFIX:-dags/dependencies/dbt/scripts}"'
-      - 'echo "Syncing scripts/ to s3://${DAG_SCRIPTS_BUCKET}/${S3_PREFIX}/"'
-      - 'aws s3 sync scripts/ "s3://${DAG_SCRIPTS_BUCKET}/${S3_PREFIX}/" --delete --exact-timestamps'
-      - 'echo "Done"'
-
-  - label: ":serverless: Deploy Serverless permissions"
-    key: "deploy-serverless-permissions"
-    depends_on: "choose-deploy-path"
-    branches: "main"
-    commands:
-      - "set -euo pipefail"
-      - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path 2>/dev/null || true)"'
-      - 'ENVIRONMENT="$(buildkite-agent meta-data get environment 2>/dev/null || true)"'
-      - 'test -n "$DEPLOY_PATH" || (echo "deploy_path meta-data not set — did the block step complete?" && exit 1)'
-      - 'test -n "$ENVIRONMENT" || (echo "environment meta-data not set — did the block step complete?" && exit 1)'
-      - 'if [ "$DEPLOY_PATH" != "serverless_permissions" ]; then echo "Skipping serverless step (selected path: $DEPLOY_PATH)"; exit 0; fi'
-      - 'echo "Deploying serverless permissions to environment: $ENVIRONMENT"'
-      - './scripts/deploy_permissions.sh "$ENVIRONMENT" "${AWS_PROFILE:-}" "${AWS_REGION:-us-east-1}"'
+      - ".buildkite/route.sh"
