@@ -28,8 +28,8 @@ steps:
     branches: "main"
     commands:
       - "set -euo pipefail"
-      - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path --default "")"'
-      - 'ENVIRONMENT="$(buildkite-agent meta-data get environment --default "")"'
+      - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path 2>/dev/null || true)"'
+      - 'ENVIRONMENT="$(buildkite-agent meta-data get environment 2>/dev/null || true)"'
       - 'test -n "$DEPLOY_PATH" || (echo "deploy_path meta-data not set — did the block step complete?" && exit 1)'
       - 'test -n "$ENVIRONMENT" || (echo "environment meta-data not set — did the block step complete?" && exit 1)'
       - 'if [ "$DEPLOY_PATH" != "upload_s3" ]; then echo "Skipping upload step (selected path: $DEPLOY_PATH)"; exit 0; fi'
@@ -46,8 +46,8 @@ steps:
     branches: "main"
     commands:
       - "set -euo pipefail"
-      - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path --default "")"'
-      - 'ENVIRONMENT="$(buildkite-agent meta-data get environment --default "")"'
+      - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path 2>/dev/null || true)"'
+      - 'ENVIRONMENT="$(buildkite-agent meta-data get environment 2>/dev/null || true)"'
       - 'test -n "$DEPLOY_PATH" || (echo "deploy_path meta-data not set — did the block step complete?" && exit 1)'
       - 'test -n "$ENVIRONMENT" || (echo "environment meta-data not set — did the block step complete?" && exit 1)'
       - 'if [ "$DEPLOY_PATH" != "serverless_permissions" ]; then echo "Skipping serverless step (selected path: $DEPLOY_PATH)"; exit 0; fi'
