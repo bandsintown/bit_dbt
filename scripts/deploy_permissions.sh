@@ -38,7 +38,8 @@ fi
 
 # Run from project root so relative paths in serverless config resolve consistently in CI.
 cd "$ROOT_DIR"
-SLS_CMD=(npx --yes serverless@3)
+# Use explicit package+binary form so npx does not resolve an unrelated CLI.
+SLS_CMD=(npx --yes --package "serverless@3" serverless)
 
 DEPLOY_ARGS=(
   deploy
