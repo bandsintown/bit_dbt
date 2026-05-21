@@ -19,7 +19,7 @@ Resources:
       Roles:
         - !Ref MWAAExecutionRole
       PolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action: airflow:PublishMetrics
@@ -28,9 +28,7 @@ Resources:
               - !Sub "arn:aws:airflow:${AWS::Region}:${AWS::AccountId}:environment/bit-dbt"
           - Effect: Deny
             Action: s3:ListAllMyBuckets
-            Resource:
-              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}"
-              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}/*"
+            Resource: "*"
           - Effect: Allow
             Action:
               - "s3:GetObject*"
