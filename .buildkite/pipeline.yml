@@ -11,6 +11,10 @@ steps:
             value: "upload_s3"
           - label: "Deploy Serverless permissions"
             value: "serverless_permissions"
+      - text: "Permissions stage (used for Serverless path)"
+        key: "permissions_stage"
+        hint: "Example: prod"
+        default: "prod"
 
   - label: ":aws: Upload scripts for Airflow DAG"
     key: "upload-airflow-scripts"
@@ -34,6 +38,7 @@ steps:
       - "set -euo pipefail"
       - 'DEPLOY_PATH="$(buildkite-agent meta-data get deploy_path)"'
       - 'if [ "$DEPLOY_PATH" != "serverless_permissions" ]; then echo "Skipping serverless step (selected path: $DEPLOY_PATH)"; exit 0; fi'
-      - 'test -n "${PERMISSIONS_STAGE:-}" || (echo "PERMISSIONS_STAGE is required" && exit 1)'
-      - './scripts/deploy_permissions.sh "${PERMISSIONS_STAGE}" "${AWS_PROFILE:-}" "${AWS_REGION:-us-east-1}"'
+      - 'PERMISSIONS_STAGE_VALUE="$(buildkite-agent meta-data get permissions_stage --default "${PERMISSIONS_STAGE:-}")"'
+      - 'test -n "$PERMISSIONS_STAGE_VALUE" || (echo "PERMISSIONS_STAGE is required (set block field or env var)" && exit 1)'
+      - './scripts/deploy_permissions.sh "$PERMISSIONS_STAGE_VALUE" "${AWS_PROFILE:-}" "${AWS_REGION:-us-east-1}"'
 
