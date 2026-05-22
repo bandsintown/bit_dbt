@@ -10,7 +10,7 @@ echo "Environment: $ENVIRONMENT"
 
 if [ "$DEPLOY_PATH" = "upload_s3" ]; then
   echo "--- :aws: Uploading pipeline for S3 upload"
-  DAG_BUCKET="${{DAG_SCRIPTS_BUCKET:-bit-dbt-${ENVIRONMENT}}}"
+  DAG_BUCKET="${DAG_SCRIPTS_BUCKET:-bit-dbt-${ENVIRONMENT}}"
   SCRIPTS_PREFIX="${DAG_SCRIPTS_PREFIX:-dags/dependencies/dbt/scripts}"
   DBT_PROJECT_PREFIX="${DBT_PROJECT_S3_PREFIX:-dags/dependencies/dbt/project}"
 
