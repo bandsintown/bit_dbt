@@ -257,6 +257,25 @@ make deploy-permissions STAGE=prod AWS_PROFILE=default AWS_REGION=us-east-1
 There is also a GitHub Actions pipeline at `.github/workflows/deploy-serverless-permissions.yml`.
 It deploys automatically on changes to the IAM Serverless config and can be run manually via workflow dispatch.
 
+### Airflow dbt Runtime Payload
+
+Buildkite `upload_s3` now uploads:
+- `scripts/` to `s3://bit-dbt-<env>/dags/dependencies/dbt/scripts/`
+- dbt project payload to `s3://bit-dbt-<env>/dags/dependencies/dbt/project/`
+
+In Airflow/MWAA, use:
+
+```bash
+/usr/local/airflow/dags/dependencies/dbt/scripts/run_dbt.sh run
+/usr/local/airflow/dags/dependencies/dbt/scripts/run_dbt.sh test
+```
+
+The helper script accepts additional dbt args, for example:
+
+```bash
+/usr/local/airflow/dags/dependencies/dbt/scripts/run_dbt.sh build --select tag:daily
+```
+
 ## 📖 Documentation
 
 Generate and view dbt documentation:

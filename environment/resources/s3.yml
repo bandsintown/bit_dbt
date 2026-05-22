@@ -1,0 +1,13 @@
+Resources:
+  MWAAEnvironmentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:custom.vars.airflow_environment_bucket_name}
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    DeletionPolicy: Retain

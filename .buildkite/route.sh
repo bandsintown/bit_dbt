@@ -12,11 +12,11 @@ if [ "$DEPLOY_PATH" = "upload_s3" ]; then
   echo "--- :aws: Uploading pipeline for S3 upload"
   buildkite-agent pipeline upload <<EOF
 steps:
-  - label: ":aws: Upload scripts to S3 (${ENVIRONMENT})"
+  - label: ":aws: Upload dbt payload to S3 (${ENVIRONMENT})"
     key: "upload-scripts-s3"
     commands:
       - set -euo pipefail
-      - 'DAG_SCRIPTS_BUCKET="\${DAG_SCRIPTS_BUCKET:-bit-dbt-${ENVIRONMENT}}"; S3_PREFIX="\${DAG_SCRIPTS_PREFIX:-dags/dependencies/dbt/scripts}"; echo "Syncing scripts/ to s3://\${DAG_SCRIPTS_BUCKET}/\${S3_PREFIX}/"; aws s3 sync scripts/ "s3://\${DAG_SCRIPTS_BUCKET}/\${S3_PREFIX}/" --delete --exact-timestamps; echo "Done"'
+      - 'DAG_SCRIPTS_BUCKET="\${DAG_SCRIPTS_BUCKET:-bit-dbt-${ENVIRONMENT}}"; SCRIPTS_PREFIX="\${DAG_SCRIPTS_PREFIX:-dags/dependencies/dbt/scripts}"; DBT_PROJECT_PREFIX="\${DBT_PROJECT_S3_PREFIX:-dags/dependencies/dbt/project}"; echo "Syncing scripts/ to s3://\${DAG_SCRIPTS_BUCKET}/\${SCRIPTS_PREFIX}/"; aws s3 sync scripts/ "s3://\${DAG_SCRIPTS_BUCKET}/\${SCRIPTS_PREFIX}/" --delete --exact-timestamps; echo "Syncing dbt project payload to s3://\${DAG_SCRIPTS_BUCKET}/\${DBT_PROJECT_PREFIX}/"; aws s3 sync . "s3://\${DAG_SCRIPTS_BUCKET}/\${DBT_PROJECT_PREFIX}/" --delete --exact-timestamps --exclude ".git/*" --exclude ".github/*" --exclude ".buildkite/*" --exclude ".idea/*" --exclude ".venv/*" --exclude "target/*" --exclude "logs/*" --exclude "dbt_packages/*" --exclude "node_modules/*" --exclude "environment/*" --exclude "scripts/*"; echo "Done"'
 EOF
 
 elif [ "$DEPLOY_PATH" = "serverless_permissions" ]; then
