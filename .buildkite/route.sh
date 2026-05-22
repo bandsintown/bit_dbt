@@ -16,11 +16,7 @@ steps:
     key: "upload-scripts-s3"
     commands:
       - set -euo pipefail
-      - 'DAG_SCRIPTS_BUCKET="\${DAG_SCRIPTS_BUCKET:-bit-dbt-${ENVIRONMENT}}"'
-      - 'S3_PREFIX="\${DAG_SCRIPTS_PREFIX:-dags/dependencies/dbt/scripts}"'
-      - 'echo "Syncing scripts/ to s3://\${DAG_SCRIPTS_BUCKET}/\${S3_PREFIX}/"'
-      - 'aws s3 sync scripts/ "s3://\${DAG_SCRIPTS_BUCKET}/\${S3_PREFIX}/" --delete --exact-timestamps'
-      - 'echo "Done"'
+      - 'DAG_SCRIPTS_BUCKET="\${DAG_SCRIPTS_BUCKET:-bit-dbt-${ENVIRONMENT}}"; S3_PREFIX="\${DAG_SCRIPTS_PREFIX:-dags/dependencies/dbt/scripts}"; echo "Syncing scripts/ to s3://\${DAG_SCRIPTS_BUCKET}/\${S3_PREFIX}/"; aws s3 sync scripts/ "s3://\${DAG_SCRIPTS_BUCKET}/\${S3_PREFIX}/" --delete --exact-timestamps; echo "Done"'
 EOF
 
 elif [ "$DEPLOY_PATH" = "serverless_permissions" ]; then
