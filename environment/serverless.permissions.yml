@@ -16,4 +16,5 @@ custom:
 
 resources:
   - ${file(resources/iam.yml)}
+  - ${file(resources/buildkite_s3_access.yml)}
 

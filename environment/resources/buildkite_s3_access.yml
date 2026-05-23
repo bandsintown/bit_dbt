@@ -1,0 +1,32 @@
+Resources:
+  DbtDagScriptsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Sub "bit-dbt-${self:provider.stage}"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowAccountListDagsDbtPrefix
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${self:custom.vars.account_id}:root"
+            Action:
+              - s3:ListBucket
+              - s3:GetBucketLocation
+            Resource: !Sub "arn:aws:s3:::bit-dbt-${self:provider.stage}"
+            Condition:
+              StringLike:
+                s3:prefix:
+                  - dags/dependencies/dbt
+                  - dags/dependencies/dbt/*
+          - Sid: AllowAccountReadWriteDagsDbtObjects
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${self:custom.vars.account_id}:root"
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:AbortMultipartUpload
+            Resource: !Sub "arn:aws:s3:::bit-dbt-${self:provider.stage}/dags/dependencies/dbt/*"
+
