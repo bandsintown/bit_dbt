@@ -15,7 +15,6 @@ custom:
   vars: ${file(variables.yml):${self:provider.stage}}
 
 resources:
-  - ${file(resources/dbt_bucket.yml)}
   - ${file(resources/iam.yml)}
   - ${file(resources/buildkite_s3_access.yml)}
 

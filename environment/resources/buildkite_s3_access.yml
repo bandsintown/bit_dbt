@@ -2,7 +2,7 @@ Resources:
   DbtDagScriptsBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: 'bit-dbt-dev'
+      Bucket: ${self:custom.vars.airflow_environment_bucket_name}
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -13,7 +13,7 @@ Resources:
             Action:
               - s3:ListBucket
               - s3:GetBucketLocation
-            Resource: !Sub "arn:aws:s3:::bit-dbt-dev"
+            Resource: !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}"
             Condition:
               StringLike:
                 s3:prefix:
@@ -28,5 +28,5 @@ Resources:
               - s3:PutObject
               - s3:DeleteObject
               - s3:AbortMultipartUpload
-            Resource: !Sub "arn:aws:s3:::bit-dbt-dev/dags/dependencies/dbt/*"
+            Resource: !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}/dags/dependencies/dbt/*"
 
