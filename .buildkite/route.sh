@@ -24,7 +24,7 @@ steps:
     key: "upload-scripts-s3"
     commands:
       - set -euo pipefail
-      - 'echo "Syncing scripts/ to s3://${DAG_BUCKET}/${SCRIPTS_PREFIX}/"; aws s3 sync scripts/ "s3://${DAG_BUCKET}/${SCRIPTS_PREFIX}/" --delete --exact-timestamps; echo "Syncing dbt project payload to s3://${DAG_BUCKET}/${DBT_PROJECT_PREFIX}/"; aws s3 sync . "s3://${DAG_BUCKET}/${DBT_PROJECT_PREFIX}/" --delete --exact-timestamps --exclude ".git/*" --exclude ".github/*" --exclude ".buildkite/*" --exclude ".idea/*" --exclude ".venv/*" --exclude "target/*" --exclude "logs/*" --exclude "dbt_packages/*" --exclude "node_modules/*" --exclude "environment/*" --exclude "scripts/*"; echo "Done"'
+      - 'echo "Copying scripts/ to s3://${DAG_BUCKET}/${SCRIPTS_PREFIX}/"; aws s3 cp scripts/ "s3://${DAG_BUCKET}/${SCRIPTS_PREFIX}/" --recursive; echo "Copying dbt project payload to s3://${DAG_BUCKET}/${DBT_PROJECT_PREFIX}/"; aws s3 cp . "s3://${DAG_BUCKET}/${DBT_PROJECT_PREFIX}/" --recursive --exclude ".git/*" --exclude ".github/*" --exclude ".buildkite/*" --exclude ".idea/*" --exclude ".venv/*" --exclude "target/*" --exclude "logs/*" --exclude "dbt_packages/*" --exclude "node_modules/*" --exclude "environment/*" --exclude "scripts/*"; echo "Done"'
 EOF
 
 elif [ "$DEPLOY_PATH" = "serverless_permissions" ]; then
