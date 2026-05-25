@@ -1,5 +1,27 @@
+dev:
+  airflow_environment_bucket_name: 'bit-dbt-dev'
+  account_id: 052510803641
+  region_name: us-east-1
+  vpc:
+    securityGroupIds:
+      - sg-04f40793dcc3482c8
+    subnetIds:
+      - subnet-04d90a64db60123ad
+      - subnet-0409851ea2900b155
+
+staging:
+  airflow_environment_bucket_name: 'bit-dbt-staging'
+  account_id: 052510803641
+  region_name: us-east-1
+  vpc:
+    securityGroupIds:
+      - sg-04f40793dcc3482c8
+    subnetIds:
+      - subnet-04d90a64db60123ad
+      - subnet-0409851ea2900b155
+
 prod:
-  airflow_environment_bucket_name: 'bit-data-pipeline'
+  airflow_environment_bucket_name: 'bit-dbt-prod'
   account_id: 052510803641
   region_name: us-east-1
   vpc:
