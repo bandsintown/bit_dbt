@@ -8,11 +8,11 @@ SERVERLESS_CONFIG_FILE="serverless.permissions.yml"
 
 usage() {
   cat <<EOF
-Usage: ./scripts/deploy_permissions.sh <stage> [aws-profile] [region]
+Usage: ./scripts/deploy_permissions.sh <stage> [region]
 
 Examples:
   ./scripts/deploy_permissions.sh prod
-  ./scripts/deploy_permissions.sh prod bit-prod us-east-1
+  ./scripts/deploy_permissions.sh prod us-east-1
 EOF
 }
 
@@ -22,8 +22,9 @@ if [ $# -lt 1 ]; then
 fi
 
 STAGE="$1"
-AWS_PROFILE="${2:-bit-$STAGE}"
-AWS_REGION="${3:-us-east-1}"
+AWS_PROFILE="bit-prod"
+# Keep backward compatibility with old call shape: <stage> [aws-profile] [region]
+AWS_REGION="${3:-${2:-us-east-1}}"
 
 echo "STAGE=$STAGE"
 echo "AWS_PROFILE=$AWS_PROFILE"

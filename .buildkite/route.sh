@@ -24,7 +24,7 @@ steps:
     key: "upload-scripts-s3"
     commands:
       - set -euo pipefail
-      - 'echo "Copying scripts/ to s3://${DAG_BUCKET}/${SCRIPTS_PREFIX}/"; aws s3 cp scripts/ "s3://${DAG_BUCKET}/${SCRIPTS_PREFIX}/" --recursive; echo "Copying dbt project payload to s3://${DAG_BUCKET}/${DBT_PROJECT_PREFIX}/"; aws s3 cp . "s3://${DAG_BUCKET}/${DBT_PROJECT_PREFIX}/" --recursive --exclude ".git/*" --exclude ".github/*" --exclude ".buildkite/*" --exclude ".idea/*" --exclude ".venv/*" --exclude "target/*" --exclude "logs/*" --exclude "dbt_packages/*" --exclude "node_modules/*" --exclude "environment/*" --exclude "scripts/*"; echo "Done"'
+      - 'python3 scripts/upload_dbt_payload.py --bucket "${DAG_BUCKET}" --scripts-prefix "${SCRIPTS_PREFIX}" --project-prefix "${DBT_PROJECT_PREFIX}" --profile bit-prod --region "${AWS_REGION:-us-east-1}"'
 EOF
 
 elif [ "$DEPLOY_PATH" = "serverless_permissions" ]; then
@@ -36,7 +36,7 @@ steps:
     commands:
       - set -euo pipefail
       - 'echo "Deploying serverless permissions to environment: ${ENVIRONMENT}"'
-      - './scripts/deploy_permissions.sh "${ENVIRONMENT}" "\${AWS_PROFILE:-}" "\${AWS_REGION:-us-east-1}"'
+      - './scripts/deploy_permissions.sh "${ENVIRONMENT}" "\${AWS_REGION:-us-east-1}"'
 EOF
 
 else
