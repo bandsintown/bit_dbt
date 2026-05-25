@@ -34,17 +34,20 @@ export SLS_DEBUG="${SLS_DEBUG:-*}"
 
 # Bootstrap deployment bucket if it does not exist yet.
 DEPLOYMENT_BUCKET="bit-dbt-${STAGE}"
-echo "Checking deployment bucket: $DEPLOYMENT_BUCKET"
-if aws s3api head-bucket --bucket "$DEPLOYMENT_BUCKET" --profile "$AWS_PROFILE" 2>/dev/null; then
-  echo "Deployment bucket already exists."
-else
-  echo "Creating deployment bucket: $DEPLOYMENT_BUCKET"
-  aws s3 mb "s3://$DEPLOYMENT_BUCKET" --region "$AWS_REGION" --profile "$AWS_PROFILE"
+echo "Ensuring deployment bucket exists: $DEPLOYMENT_BUCKET"
+CREATE_OUTPUT=$(aws s3 mb "s3://$DEPLOYMENT_BUCKET" --region "$AWS_REGION" --profile "$AWS_PROFILE" 2>&1) && true
+if echo "$CREATE_OUTPUT" | grep -qiE "BucketAlreadyOwnedByYou|BucketAlreadyExists|OperationAborted|make_bucket failed"; then
+  echo "Deployment bucket already exists, continuing."
+elif echo "$CREATE_OUTPUT" | grep -q "make_bucket:"; then
+  echo "Deployment bucket created."
   aws s3api put-public-access-block \
     --bucket "$DEPLOYMENT_BUCKET" \
+    --region "$AWS_REGION" \
     --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true" \
     --profile "$AWS_PROFILE"
-  echo "Deployment bucket created."
+else
+  echo "[ERROR] Unexpected error creating bucket: $CREATE_OUTPUT" >&2
+  exit 1
 fi
 
 # Run inside the Serverless service directory.
