@@ -9,7 +9,7 @@ provider:
   logRetentionInDays: 14
   versionFunctions: false
   deploymentBucket:
-    name: bit-${opt:stage, 'prod'}-artifacts
+    name: bit-dbt-${opt:stage, 'prod'}
 
 custom:
   vars: ${file(variables.yml):${self:provider.stage}}
