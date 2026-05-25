@@ -9,7 +9,7 @@ Resources:
           - Sid: AllowAccountListDagsDbtPrefix
             Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${self:custom.vars.account_id}:root"
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action:
               - s3:ListBucket
               - s3:GetBucketLocation
@@ -22,7 +22,7 @@ Resources:
           - Sid: AllowAccountReadWriteDagsDbtObjects
             Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${self:custom.vars.account_id}:root"
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action:
               - s3:GetObject
               - s3:PutObject
