@@ -25,6 +25,10 @@ EXCLUDE_PATTERNS = [
     "scripts/*",
 ]
 
+INCLUDE_PATHS = {
+    "target/manifest.json",
+}
+
 
 def is_excluded(relative_path: str, patterns: Iterable[str]) -> bool:
     return any(fnmatch.fnmatch(relative_path, pattern) for pattern in patterns)
@@ -36,6 +40,20 @@ def iter_files(base_dir: Path, exclude_patterns: Iterable[str]) -> Iterable[Path
             continue
         rel = path.relative_to(base_dir).as_posix()
         if is_excluded(rel, exclude_patterns):
+            continue
+        yield path
+
+
+def iter_project_files(base_dir: Path) -> Iterable[Path]:
+    for path in base_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(base_dir).as_posix()
+        # Keep target excluded except for manifest.json, which Airflow/Cosmos needs.
+        if rel in INCLUDE_PATHS:
+            yield path
+            continue
+        if is_excluded(rel, EXCLUDE_PATTERNS):
             continue
         yield path
 
@@ -86,7 +104,7 @@ def main() -> None:
     scripts_uploaded = upload_files(bucket, scripts_dir, script_files, args.scripts_prefix, args.dry_run)
 
     print(f"Uploading dbt payload to s3://{args.bucket}/{args.project_prefix.strip('/')}/")
-    project_files = list(iter_files(root_dir, EXCLUDE_PATTERNS))
+    project_files = list(iter_project_files(root_dir))
     project_uploaded = upload_files(bucket, root_dir, project_files, args.project_prefix, args.dry_run)
 
     print(f"Completed: scripts={scripts_uploaded}, project={project_uploaded}, dry_run={args.dry_run}")
