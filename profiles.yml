@@ -7,42 +7,43 @@ bandsintown:
   outputs:
     dev:
       type: athena
-      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bandsintown-dbt-analytics/dev/') }}"
-      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bandsintown-dbt-analytics/dev/data/') }}"
+      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bit-bigdata-daily-state-cycle/bit_dbt/dev/') }}"
+      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bit-bigdata-daily-state-cycle/bit_dbt/dev/data/') }}"
       region_name: "{{ env_var('AWS_REGION', 'us-east-1') }}"
-      database: "{{ env_var('DBT_ATHENA_DATABASE', 'bandsintown_analytics_dev') }}"
-      schema: analytics
-      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-dev') }}"
+      database: awsdatacatalog
+      schema: "{{ env_var('DBT_ATHENA_DATABASE', 'bit_dbt_dev') }}"
+      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       num_retries: 3
       threads: 4
       # EMR Serverless configuration
-      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-dev') }}"
+      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       poll_interval: 5
-      aws_profile_name: "{{ env_var('AWS_PROFILE', '') }}"
-      
+      aws_profile_name: "{{ env_var('AWS_PROFILE', 'default') }}"
+
     staging:
       type: athena
-      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bandsintown-dbt-analytics/staging/') }}"
-      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bandsintown-dbt-analytics/staging/data/') }}"
+      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bit-bigdata-daily-state-cycle/bit_dbt/staging/') }}"
+      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bit-bigdata-daily-state-cycle/bit_dbt/staging/data/') }}"
       region_name: "{{ env_var('AWS_REGION', 'us-east-1') }}"
-      database: "{{ env_var('DBT_ATHENA_DATABASE', 'bandsintown_analytics_staging') }}"
-      schema: analytics
-      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-staging') }}"
+      database: awsdatacatalog
+      schema: "{{ env_var('DBT_ATHENA_DATABASE', 'bit_dbt_staging') }}"
+      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       num_retries: 3
       threads: 8
-      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-staging') }}"
+      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       poll_interval: 5
-      
+      aws_profile_name: "{{ env_var('AWS_PROFILE', 'default') }}"
+
     prod:
       type: athena
-      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bandsintown-dbt-analytics/prod/') }}"
-      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bandsintown-dbt-analytics/prod/data/') }}"
+      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR', 's3://bit-bigdata-daily-state-cycle/bit_dbt/prod/') }}"
+      s3_data_dir: "{{ env_var('DBT_ATHENA_S3_DATA_DIR', 's3://bit-bigdata-daily-state-cycle/bit_dbt/prod/data/') }}"
       region_name: "{{ env_var('AWS_REGION', 'us-east-1') }}"
-      database: "{{ env_var('DBT_ATHENA_DATABASE', 'bandsintown_analytics_prod') }}"
-      schema: analytics
-      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-prod') }}"
+      database: awsdatacatalog
+      schema: "{{ env_var('DBT_ATHENA_DATABASE', 'bit_dbt_prod') }}"
+      work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       num_retries: 5
       threads: 16
-      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'bandsintown-dbt-prod') }}"
+      spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       poll_interval: 5
-
+      aws_profile_name: "{{ env_var('AWS_PROFILE', 'default') }}"
