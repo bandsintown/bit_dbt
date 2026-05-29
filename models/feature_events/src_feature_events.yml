@@ -5,40 +5,9 @@ sources:
     database: "{{ target.database }}"
     schema: featured_events
     tables:
-      - name: email_real_opens
-      - name: pixel_impressions_v2
-      - name: all_time_featured_events_list
-      - name: ticketclicks
+      - name: featured_events_list
       - name: pixelactivities
-
-  - name: tableau_db
-    database: "{{ target.database }}"
-    schema: tableau_db
-    tables:
-      - name: came_from
-      - name: daily_snapshot_events_parquet
-      - name: festival_editions
-      - name: venue_admin_parquet
-      - name: daily_snapshot_venues_parquet
-      - name: artist_list_parquet
-
-  - name: promoter
-    database: "{{ target.database }}"
-    schema: promoter
-    tables:
-      - name: email_campaign
-      - name: email_campaign_details
-
-  - name: featured_artist_events
-    database: "{{ target.database }}"
-    schema: featured_artist_events
-    tables:
-      - name: packages
-      - name: events
-
-  - name: bit_venues
-    database: "{{ target.database }}"
-    schema: bit_venues
-    tables:
-      - name: venue_subscriptions
+      - name: email_impressions
+      - name: ticketclicks
+      - name: rsvps
 

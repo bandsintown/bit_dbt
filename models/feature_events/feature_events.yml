@@ -1,17 +1,52 @@
 version: 2
 
 models:
-  - name: fct_featured_events_kpis
-    description: Featured events KPI mart combining impressions, clicks, and event metadata.
+  - name: stg_featured_events_pixel_impressions
+    description: Normalized pixel impressions for featured events.
     columns:
-      - name: date
-      - name: source
       - name: artist_event_int_id
-      - name: nb
+        tests: [not_null]
+      - name: ds
+        tests: [not_null]
+      - name: nonce
+        tests: [not_null]
 
-  - name: int_kpis_by_day
-    description: Daily KPI aggregates across email, ticket clicks, and pixel impression sources.
+  - name: stg_featured_events_email_impressions
+    description: Normalized email open impressions for featured events.
+    columns:
+      - name: artist_event_int_id
+        tests: [not_null]
+      - name: ds
+        tests: [not_null]
+      - name: nonce
+        tests: [not_null]
 
-  - name: int_event_id_with_fe_source
-    description: Canonical featured-event source per artist event id.
+  - name: int_featured_event_impressions
+    description: Unified event impression stream from pixel and email channels.
+    columns:
+      - name: impression_channel
+        tests:
+          - accepted_values:
+              values: ['pixel', 'email']
+
+  - name: fct_event_impression
+    description: Per-impression fact table. Grain is one row per nonce.
+    columns:
+      - name: nonce
+        tests: [not_null, unique]
+      - name: event_id
+        tests: [not_null]
+      - name: date
+        tests: [not_null]
+
+  - name: fct_event_daily
+    description: Per-event per-day KPI fact table derived from impression, click, and RSVP facts.
+    columns:
+      - name: event_id
+        tests: [not_null]
+      - name: date
+        tests: [not_null]
+      - name: total_impressions
+        tests: [not_null]
+
 

@@ -46,8 +46,7 @@ models:
     feature_events:
       +materialized: view
       +tags: ["feature_events"]
-      +schema: analytics
-
+      +schema: bit_dbt_prod
 # Documentation
 vars:
   # Timezone for timestamp conversions
