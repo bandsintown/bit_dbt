@@ -5,7 +5,7 @@ Cosmos auto-generates one Airflow task per dbt model from
 the project manifest, preserving dbt's dependency graph.
 
 Requirements (add to MWAA requirements.txt):
-  astronomer-cosmos==1.5.0
+  astronomer-cosmos==1.7.1
 
   dbt is installed at runtime in an isolated virtualenv by Cosmos.
   No dbt packages needed in MWAA requirements (avoids constraint conflicts).
