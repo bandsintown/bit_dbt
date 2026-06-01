@@ -5,9 +5,10 @@ Cosmos auto-generates one Airflow task per dbt model from
 the project manifest, preserving dbt's dependency graph.
 
 Requirements (add to MWAA requirements.txt):
-  astronomer-cosmos[dbt-athena]==1.5.2
-  dbt-core==1.7.13
-  dbt-athena-community==1.7.2
+  astronomer-cosmos==1.5.0
+
+  dbt is installed at runtime in an isolated virtualenv by Cosmos.
+  No dbt packages needed in MWAA requirements (avoids constraint conflicts).
 
 Airflow Variables to set:
   dbt_target          dev | staging | prod (default: prod)
@@ -64,8 +65,13 @@ profile_config = ProfileConfig(
 )
 
 execution_config = ExecutionConfig(
-    execution_mode=ExecutionMode.LOCAL,
+    execution_mode=ExecutionMode.VIRTUALENV,
     dbt_executable_path="dbt",
+    virtualenv_dir="/tmp/dbt_venv",
+    py_requirements=[
+        "dbt-core==1.7.13",
+        "dbt-athena-community==1.7.2",
+    ],
 )
 
 render_config = RenderConfig(
