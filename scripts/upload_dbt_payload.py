@@ -113,7 +113,7 @@ def main() -> None:
     if dags_dir.is_dir():
         print(f"Uploading dags/ to s3://{args.bucket}/dags/")
         dag_files = list(iter_files(dags_dir, exclude_patterns=["requirements.txt"]))
-        dags_uploaded = upload_files(bucket, args.bucket, dags_dir, dag_files, "dags", args.dry_run)
+        dags_uploaded = upload_files(bucket, dags_dir, dag_files, "dags", args.dry_run)
 
     # Upload requirements.txt to bucket root (MWAA reads it from RequirementsS3Path)
     req_file = dags_dir / "requirements.txt"
