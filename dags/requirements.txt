@@ -1,0 +1,8 @@
+# MWAA requirements — upload to s3://bit-dbt-prod/requirements.txt
+# then set RequirementsS3Path in MWAA environment config.
+
+astronomer-cosmos[dbt-athena]==1.5.2
+dbt-core==1.7.13
+dbt-athena-community==1.7.2
+apache-airflow-providers-amazon>=8.0.0
+

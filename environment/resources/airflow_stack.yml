@@ -85,4 +85,5 @@ Resources:
       WebserverAccessMode: PRIVATE_ONLY
       MaxWorkers: 1
       MinWorkers: 1
+      RequirementsS3Path: requirements.txt
 

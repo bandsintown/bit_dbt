@@ -107,7 +107,22 @@ def main() -> None:
     project_files = list(iter_project_files(root_dir))
     project_uploaded = upload_files(bucket, root_dir, project_files, args.project_prefix, args.dry_run)
 
-    print(f"Completed: scripts={scripts_uploaded}, project={project_uploaded}, dry_run={args.dry_run}")
+    # Upload dags/ folder (DAG Python files) to bucket dags/
+    dags_dir = root_dir / "dags"
+    dags_uploaded = 0
+    if dags_dir.is_dir():
+        print(f"Uploading dags/ to s3://{args.bucket}/dags/")
+        dag_files = list(iter_files(dags_dir, exclude_patterns=["requirements.txt"]))
+        dags_uploaded = upload_files(bucket, args.bucket, dags_dir, dag_files, "dags", args.dry_run)
+
+    # Upload requirements.txt to bucket root (MWAA reads it from RequirementsS3Path)
+    req_file = dags_dir / "requirements.txt"
+    if req_file.is_file():
+        print(f"Uploading requirements.txt to s3://{args.bucket}/requirements.txt")
+        if not args.dry_run:
+            bucket.upload_file(Filename=str(req_file), Key="requirements.txt")
+
+    print(f"Completed: scripts={scripts_uploaded}, project={project_uploaded}, dags={dags_uploaded}, dry_run={args.dry_run}")
 
 
 if __name__ == "__main__":
