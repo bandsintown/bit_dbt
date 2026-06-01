@@ -1,0 +1,101 @@
+Resources:
+  MWAAEnvironmentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:custom.vars.airflow_environment_bucket_name}
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+    DeletionPolicy: Retain
+
+  MWAAExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - airflow-env.amazonaws.com
+                - airflow.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /service-role/
+
+  MWAAExecutionPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref MWAAExecutionRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: airflow:PublishMetrics
+            Resource:
+              - !Sub "arn:aws:airflow:${AWS::Region}:${AWS::AccountId}:environment/bit-dbt"
+          - Effect: Deny
+            Action: s3:ListAllMyBuckets
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+            Resource:
+              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}"
+              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}/*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:CreateLogGroup
+              - logs:PutLogEvents
+              - logs:GetLogEvents
+              - logs:GetLogRecord
+              - logs:GetLogGroupFields
+              - logs:GetQueryResults
+              - logs:DescribeLogGroups
+            Resource: "*"
+          - Effect: Allow
+            Action: cloudwatch:PutMetricData
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:ReceiveMessage
+              - sqs:SendMessage
+            Resource:
+              - !Sub "arn:aws:sqs:${AWS::Region}:*:airflow-celery-*"
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+              - kms:GenerateDataKey*
+              - kms:Encrypt
+            NotResource: !Sub "arn:aws:kms:*:${AWS::AccountId}:key/*"
+            Condition:
+              StringLike:
+                kms:ViaService:
+                  - !Sub "sqs.${AWS::Region}.amazonaws.com"
+
+  MWAAEnvironment:
+    Type: AWS::MWAA::Environment
+    Properties:
+      Name: bit-dbt
+      SourceBucketArn: !GetAtt MWAAEnvironmentBucket.Arn
+      ExecutionRoleArn: !GetAtt MWAAExecutionRole.Arn
+      DagS3Path: dags
+      NetworkConfiguration:
+        SecurityGroupIds: ${self:custom.vars.vpc.securityGroupIds}
+        SubnetIds: ${self:custom.vars.vpc.subnetIds}
+      WebserverAccessMode: PRIVATE_ONLY
+      MaxWorkers: 1
+      MinWorkers: 1
+

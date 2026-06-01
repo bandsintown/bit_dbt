@@ -15,7 +15,5 @@ custom:
   vars: ${file(variables.yml):${self:provider.stage}}
 
 resources:
-  - ${file(resources/s3.yml)}
-  - ${file(resources/iam.yml)}
-  - ${file(resources/airflow.yml)}
+  - ${file(resources/airflow_stack.yml)}
 
