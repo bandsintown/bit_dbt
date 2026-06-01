@@ -39,6 +39,18 @@ steps:
       - './scripts/deploy_permissions.sh "${ENVIRONMENT}" "\${AWS_REGION:-us-east-1}"'
 EOF
 
+elif [ "$DEPLOY_PATH" = "airflow_env_permissions" ]; then
+  echo "--- :cloudformation: Uploading pipeline for Airflow env + permissions"
+  buildkite-agent pipeline upload <<EOF
+steps:
+  - label: ":cloudformation: Deploy Airflow env + permissions (${ENVIRONMENT})"
+    key: "deploy-airflow-env-permissions"
+    commands:
+      - set -euo pipefail
+      - 'echo "Deploying Airflow environment + IAM permissions to environment: ${ENVIRONMENT}"'
+      - './scripts/deploy_airflow_env.sh "${ENVIRONMENT}" "bit-prod" "\${AWS_REGION:-us-east-1}"'
+EOF
+
 else
   echo "Unknown deploy path: $DEPLOY_PATH"
   exit 1

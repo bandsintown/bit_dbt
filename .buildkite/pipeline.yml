@@ -9,6 +9,8 @@ steps:
         options:
           - label: "Upload scripts to S3"
             value: "upload_s3"
+          - label: "Deploy Airflow env + permissions (CloudFormation)"
+            value: "airflow_env_permissions"
           - label: "Deploy Serverless permissions"
             value: "serverless_permissions"
       - select: "Environment"
