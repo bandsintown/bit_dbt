@@ -1,17 +1,4 @@
 Resources:
-  MWAAEnvironmentBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: ${self:custom.vars.airflow_environment_bucket_name}
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-    DeletionPolicy: Retain
-
   MWAAExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -89,7 +76,7 @@ Resources:
     Type: AWS::MWAA::Environment
     Properties:
       Name: bit-dbt
-      SourceBucketArn: !GetAtt MWAAEnvironmentBucket.Arn
+      SourceBucketArn: !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}"
       ExecutionRoleArn: !GetAtt MWAAExecutionRole.Arn
       DagS3Path: dags
       NetworkConfiguration:
