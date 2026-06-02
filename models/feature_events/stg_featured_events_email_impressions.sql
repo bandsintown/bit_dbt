@@ -14,11 +14,11 @@ with src as (
         cast(user_id as integer) as user_id,
         cast(useragent as varchar) as user_agent,
         cast(category as varchar) as category
-    from {{ source('featured_events', 'email_impressions') }}
+    from {{ source('featured_events', 'email_real_opens') }}
     cross join unnest(featured_events_ids) as t(fe_id)
     where nonce is not null
-      and lower(coalesce(event, '')) = 'open'
-      and category in ('Fan - Just Announced', 'Fan - Artist Alert', 'Fan - Ticket Reminder')
+      and lower(coalesce(event, '')) = 'real_open'
+      and cardinality(filter(featured_events_ids, x -> x is not null and x != '')) > 0
 )
 
 select *

@@ -7,10 +7,20 @@
 
 with featured_events as (
     select
-        cast(artist_event_int_id as integer) as event_id,
-        cast(coalesce(fe_source, 'unknown') as varchar) as fe_source,
-        cast(subscription_starts_at as date) as subscription_starts_at
-    from {{ source('featured_events', 'featured_events_list') }}
+        event_id,
+        sources as fe_source,
+        cast(boost_start_date as date) as boost_start_date,
+        cast(boost_end_date as date) as boost_end_date
+    from (
+        select
+            *,
+            row_number() over (
+                partition by event_id
+                order by tracked_at desc
+            ) as row_num
+        from {{ source('featured_events', 'featured_events_changelog') }}
+    ) fe
+    where row_num = 1
 ),
 base_impressions as (
     select
@@ -23,8 +33,8 @@ base_impressions as (
     from {{ ref('int_featured_event_impressions') }} i
     left join featured_events fe
         on fe.event_id = i.artist_event_int_id
-    where fe.subscription_starts_at is null
-       or i.ds >= fe.subscription_starts_at
+    where fe.boost_start_date is null
+       or i.ds >= fe.boost_start_date
 ),
 deduped as (
     select

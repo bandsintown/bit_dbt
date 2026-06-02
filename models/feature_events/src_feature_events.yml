@@ -5,9 +5,9 @@ sources:
     database: "{{ target.database }}"
     schema: featured_events
     tables:
-      - name: featured_events_list
+      - name: featured_events_changelog
       - name: pixelactivities
-      - name: email_impressions
+      - name: email_real_opens
       - name: ticketclicks
       - name: rsvps
 

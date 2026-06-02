@@ -4,7 +4,9 @@
 # NOTE: dbt is NOT installed here. Cosmos runs dbt in an isolated
 # virtualenv at task runtime to avoid MWAA dependency conflicts.
 
-astronomer-cosmos==1.7.1
+--constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.2.1/constraints-3.13.txt"
+apache-airflow-providers-amazon
+astronomer-cosmos
 
 
 
