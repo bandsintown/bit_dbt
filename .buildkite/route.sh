@@ -36,7 +36,7 @@ steps:
     commands:
       - set -euo pipefail
       - 'echo "Deploying serverless permissions to environment: ${ENVIRONMENT}"'
-      - './scripts/deploy_permissions.sh "${ENVIRONMENT}" "\${AWS_REGION:-us-east-1}"'
+      - './scripts/deploy_permissions.sh "${ENVIRONMENT}" "bit-${ENVIRONMENT}" "\${AWS_REGION:-us-east-1}"'
 EOF
 
 elif [ "$DEPLOY_PATH" = "airflow_env_permissions" ]; then
