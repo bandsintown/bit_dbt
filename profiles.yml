@@ -15,10 +15,8 @@ bandsintown:
       work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       num_retries: 3
       threads: 4
-      # EMR Serverless configuration
       spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       poll_interval: 5
-      aws_profile_name: "{{ env_var('AWS_PROFILE', 'default') }}"
 
     staging:
       type: athena
@@ -32,7 +30,6 @@ bandsintown:
       threads: 8
       spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       poll_interval: 5
-      aws_profile_name: "{{ env_var('AWS_PROFILE', 'default') }}"
 
     prod:
       type: athena
@@ -46,4 +43,3 @@ bandsintown:
       threads: 16
       spark_work_group: "{{ env_var('DBT_ATHENA_WORKGROUP', 'primary') }}"
       poll_interval: 5
-      aws_profile_name: "{{ env_var('AWS_PROFILE', 'default') }}"
