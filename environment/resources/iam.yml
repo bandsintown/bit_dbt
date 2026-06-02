@@ -1,23 +1,9 @@
 Resources:
-  MWAAExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - airflow-env.amazonaws.com
-                - airflow.amazonaws.com
-            Action:
-             - "sts:AssumeRole"
-      Path: "/service-role/"
-
   MWAAExecutionPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       Roles:
-        - !Ref MWAAExecutionRole
+        - bit-dbt-airflow-prod-MWAAExecutionRole-Rg5STgFG3DJ4
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
