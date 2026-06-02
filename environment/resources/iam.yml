@@ -72,6 +72,47 @@ Resources:
               StringLike:
                 "kms:ViaService":
                   - !Sub "sqs.${AWS::Region}.amazonaws.com"
+          - Effect: Allow
+            Action:
+              - glue:GetDatabase
+              - glue:GetDatabases
+              - glue:CreateDatabase
+              - glue:GetTable
+              - glue:GetTables
+              - glue:CreateTable
+              - glue:UpdateTable
+              - glue:DeleteTable
+              - glue:GetPartition
+              - glue:GetPartitions
+              - glue:CreatePartition
+              - glue:BatchCreatePartition
+              - glue:DeletePartition
+              - glue:BatchDeletePartition
+            Resource:
+              - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog"
+              - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/*"
+              - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/*/*"
+          - Effect: Allow
+            Action:
+              - athena:StartQueryExecution
+              - athena:GetQueryExecution
+              - athena:GetQueryResults
+              - athena:StopQueryExecution
+              - athena:GetWorkGroup
+            Resource:
+              - !Sub "arn:aws:athena:${AWS::Region}:${AWS::AccountId}:workgroup/primary"
+          - Effect: Allow
+            Action:
+              - "s3:GetObject*"
+              - "s3:PutObject*"
+              - "s3:DeleteObject*"
+              - "s3:GetBucket*"
+              - "s3:List*"
+            Resource:
+              - "arn:aws:s3:::bit-bigdata-daily-state-cycle"
+              - "arn:aws:s3:::bit-bigdata-daily-state-cycle/*"
+              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}"
+              - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}/*"
 
 
 
