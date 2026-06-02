@@ -1,14 +1,19 @@
 Resources:
-  DbtDeploymentBucket:
-    Type: AWS::S3::Bucket
+  DbtDagScriptsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
     Properties:
-      BucketName: bit-dbt-${self:provider.stage}
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-    DeletionPolicy: Retain
-
+      Bucket: bit-dbt-${self:provider.stage}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowMWAARead
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "s3:GetObject*"
+              - "s3:GetBucket*"
+              - "s3:List*"
+            Resource:
+              - !Sub "arn:aws:s3:::bit-dbt-${self:provider.stage}"
+              - !Sub "arn:aws:s3:::bit-dbt-${self:provider.stage}/*"
