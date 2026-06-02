@@ -1,102 +1,103 @@
 """
-Airflow DAG using Astronomer Cosmos to orchestrate dbt models.
-
-Cosmos auto-generates one Airflow task per dbt model from
-the project manifest, preserving dbt's dependency graph.
-
-Requirements (add to MWAA requirements.txt):
-  astronomer-cosmos==1.7.1
-
-  dbt is installed at runtime in an isolated virtualenv by Cosmos.
-  No dbt packages needed in MWAA requirements (avoids constraint conflicts).
-
-Airflow Variables to set:
-  dbt_target          dev | staging | prod (default: prod)
-  dbt_athena_workgroup  Athena workgroup (default: primary)
-  dbt_athena_database   Glue database    (default: bit_dbt_prod)
-  dbt_athena_s3_staging S3 staging path  (default: s3://bit-dbt-prod/bit_dbt/prod/)
+Advanced Airflow DAG using dbt-Cosmos for automatic task generation.
 """
 
+import os
 from datetime import datetime, timedelta
-from pathlib import Path
 
-from airflow import DAG
-from airflow.models import Variable
-
-from cosmos import DbtDag, ProjectConfig, ProfileConfig, ExecutionConfig, RenderConfig
-from cosmos.profiles import AthenaProfileMapping
-from cosmos.constants import ExecutionMode, TestBehavior
-
-# ── paths (MWAA syncs S3 dags/ → /usr/local/airflow/dags/) ──────────────────
-DBT_PROJECT_DIR  = Path("/usr/local/airflow/dags/dependencies/dbt/project")
-DBT_PROFILES_DIR = DBT_PROJECT_DIR
-DBT_MANIFEST     = DBT_PROJECT_DIR / "target" / "manifest.json"
-
-# ── runtime config ────────────────────────────────────────────────────────────
-DBT_TARGET          = Variable.get("dbt_target",           default_var="prod")
-ATHENA_WORKGROUP    = Variable.get("dbt_athena_workgroup", default_var="primary")
-ATHENA_DATABASE     = Variable.get("dbt_athena_database",  default_var=f"bit_dbt_{DBT_TARGET}")
-ATHENA_S3_STAGING   = Variable.get(
-    "dbt_athena_s3_staging",
-    default_var=f"s3://bit-dbt-{DBT_TARGET}/bit_dbt/{DBT_TARGET}/",
+from cosmos import (
+    DbtDag,
+    ExecutionConfig,
+    ExecutionMode,
+    LoadMode,
+    ProfileConfig,
+    ProjectConfig,
+    RenderConfig,
 )
-AWS_REGION = Variable.get("aws_region", default_var="us-east-1")
+from cosmos.constants import TestBehavior
 
-# ── Cosmos configs ────────────────────────────────────────────────────────────
-project_config = ProjectConfig(
-    dbt_project_path=DBT_PROJECT_DIR,
-    manifest_path=DBT_MANIFEST,
-    project_name="bandsintown",
-)
+# -----------------------------
+# CONFIG
+# -----------------------------
 
-profile_config = ProfileConfig(
-    profile_name="bandsintown",
-    target_name=DBT_TARGET,
-    profile_mapping=AthenaProfileMapping(
-        conn_id="aws_default",
-        profile_args={
-            "s3_staging_dir": ATHENA_S3_STAGING,
-            "region_name": AWS_REGION,
-            "database": "awsdatacatalog",
-            "schema": ATHENA_DATABASE,
-            "work_group": ATHENA_WORKGROUP,
-        },
-    ),
-)
+DBT_PROJECT_LOCAL_PATH = "/usr/local/airflow/dags/dependencies/dbt/project"
+DBT_PROFILE_FILE_NAME = "profiles.yml"
 
-execution_config = ExecutionConfig(
-    execution_mode=ExecutionMode.VIRTUALENV,
-    dbt_executable_path="dbt",
-    virtualenv_dir="/tmp/dbt_venv",
-    py_requirements=[
-        "dbt-core==1.7.13",
-        "dbt-athena-community==1.7.2",
-    ],
-)
+DBT_VENV_REQUIREMENTS = [
+    "dbt-core==1.7.13",
+    "dbt-athena-community==1.7.2",
+]
 
-render_config = RenderConfig(
-    select=["path:models/feature_events"],     # scope to feature_events models
-    test_behavior=TestBehavior.AFTER_EACH,     # run dbt test after each model
-)
+DBT_MANIFEST_PATH = os.path.join(DBT_PROJECT_LOCAL_PATH, "target", "manifest.json")
+DBT_PROFILES_PATH = os.path.join(DBT_PROJECT_LOCAL_PATH, DBT_PROFILE_FILE_NAME)
 
-# ── DAG ───────────────────────────────────────────────────────────────────────
-dag = DbtDag(
+
+# -----------------------------
+# DEFAULTS
+# -----------------------------
+default_args = {
+    "owner": "data-engineering",
+    "depends_on_past": False,
+    "email": ["data-alerts@bandsintown.com"],
+    "email_on_failure": True,
+    "email_on_retry": False,
+    "retries": 0,
+    "retry_delay": timedelta(minutes=5),
+}
+
+
+# -----------------------------
+# DBT COSMOS DAG
+# -----------------------------
+dbt_cosmos_dag = DbtDag(
     dag_id="dbt_feature_events_cosmos",
-    description="Cosmos-managed dbt DAG for feature_events models",
-    schedule_interval="0 2 * * *",          # 2 AM UTC daily
+
+    project_config=ProjectConfig(
+        project_name="bandsintown",
+        manifest_path=DBT_MANIFEST_PATH,
+    ),
+
+    render_config=RenderConfig(
+        load_method=LoadMode.DBT_MANIFEST,
+        test_behavior=TestBehavior.AFTER_EACH,
+    ),
+
+    execution_config=ExecutionConfig(
+        execution_mode=ExecutionMode.VIRTUALENV,
+        dbt_project_path=DBT_PROJECT_LOCAL_PATH,
+    ),
+
+    profile_config=ProfileConfig(
+        profile_name="bandsintown",
+        target_name="prod",
+        profiles_yml_filepath=DBT_PROFILES_PATH,
+    ),
+
+    operator_args={
+        "install_deps": True,
+        "py_requirements": DBT_VENV_REQUIREMENTS,
+        "py_system_site_packages": False,
+        "env": {
+            "AWS_REGION": "us-east-1",
+            "DBT_TARGET": "{{ params.dbt_target }}",
+            "DBT_PROJECT_DIR": DBT_PROJECT_LOCAL_PATH,
+            "DBT_ATHENA_DATABASE": "{{ params.dbt_athena_database }}",
+            "DBT_ATHENA_WORKGROUP": "{{ params.dbt_athena_workgroup }}",
+            "DBT_ATHENA_S3_STAGING_DIR": "{{ params.dbt_athena_s3_staging }}",
+        },
+    },
+
+    params={
+        "dbt_target": "prod",
+        "dbt_athena_workgroup": "primary",
+        "dbt_athena_database": "bit_dbt_prod",
+        "dbt_athena_s3_staging": "s3://bit-dbt-prod/bit_dbt/prod/",
+    },
+
+    default_args=default_args,
     start_date=datetime(2026, 1, 1),
+    schedule="0 2 * * *",
     catchup=False,
     max_active_runs=1,
-    default_args={
-        "owner": "data-engineering",
-        "retries": 2,
-        "retry_delay": timedelta(minutes=5),
-        "email_on_failure": True,
-    },
-    tags=["dbt", "cosmos", "feature_events", "athena"],
-    project_config=project_config,
-    profile_config=profile_config,
-    execution_config=execution_config,
-    render_config=render_config,
+    tags=["dbt", "athena", "feature_events", "cosmos"],
 )
-

@@ -23,10 +23,24 @@ EXCLUDE_PATTERNS = [
     "node_modules/*",
     "environment/*",
     "scripts/*",
+    "dags/*",
 ]
 
 INCLUDE_PATHS = {
     "target/manifest.json",
+}
+
+# Only these top-level directories/files are uploaded as the dbt project payload
+PROJECT_ALLOWED_PREFIXES = [
+    "models/",
+    "macros/",
+    "seeds/",
+    "snapshots/",
+]
+
+PROJECT_ALLOWED_FILES = {
+    "dbt_project.yml",
+    "profiles.yml",
 }
 
 
@@ -49,13 +63,22 @@ def iter_project_files(base_dir: Path) -> Iterable[Path]:
         if not path.is_file():
             continue
         rel = path.relative_to(base_dir).as_posix()
-        # Keep target excluded except for manifest.json, which Airflow/Cosmos needs.
+        # Always include explicit paths like target/manifest.json
         if rel in INCLUDE_PATHS:
             yield path
             continue
-        if is_excluded(rel, EXCLUDE_PATTERNS):
+        # Skip READMEs and .env files
+        if path.name.lower().startswith("readme") or path.name == ".env":
             continue
-        yield path
+        # Allow only specific top-level files
+        if rel in PROJECT_ALLOWED_FILES:
+            yield path
+            continue
+        # Allow only specific directory prefixes
+        if any(rel.startswith(prefix) for prefix in PROJECT_ALLOWED_PREFIXES):
+            yield path
+            continue
+        # Everything else is excluded
 
 
 def upload_files(bucket, root_dir: Path, files: Iterable[Path], key_prefix: str, dry_run: bool) -> int:
