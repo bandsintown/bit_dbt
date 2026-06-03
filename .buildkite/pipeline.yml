@@ -1,7 +1,6 @@
 steps:
   - block: "Choose deployment path"
     key: "choose-deploy-path"
-    branches: "main"
     fields:
       - select: "Deployment path"
         key: "deploy_path"
@@ -27,6 +26,5 @@ steps:
   - label: ":pipeline: Route deployment"
     key: "route-deployment"
     depends_on: "choose-deploy-path"
-    branches: "main"
     commands:
       - ".buildkite/route.sh"
