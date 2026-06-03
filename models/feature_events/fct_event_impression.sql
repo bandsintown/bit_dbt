@@ -1,7 +1,6 @@
 {{
   config(
     materialized='table',
-    partitioned_by=['date'],
     tags=['feature_events', 'marts', 'kpi']
   )
 }}
@@ -27,7 +26,7 @@ base_impressions as (
     select
         i.nonce,
         i.artist_event_int_id as event_id,
-        cast(i.ds as date) as date,
+        i.ds as date,
         coalesce(i.fe_source, fe.fe_source, 'unknown') as fe_source,
         i.impression_channel,
         i.user_id
@@ -35,7 +34,7 @@ base_impressions as (
     left join featured_events fe
         on fe.event_id = i.artist_event_int_id
     where fe.boost_start_date is null
-       or i.ds >= fe.boost_start_date
+       or i.ds >= cast(fe.boost_start_date as varchar)
 ),
 deduped as (
     select
@@ -50,10 +49,10 @@ deduped as (
 select
     nonce,
     event_id,
+    date,
     fe_source,
     impression_channel,
     user_id,
-    cast(current_timestamp as timestamp) as updated_at,
-    date
+    cast(current_timestamp as timestamp) as updated_at
 from deduped
 where rn = 1

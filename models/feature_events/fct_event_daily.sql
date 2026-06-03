@@ -1,7 +1,6 @@
 {{
   config(
     materialized='table',
-    partitioned_by=['date'],
     tags=['feature_events', 'marts', 'kpi']
   )
 }}
@@ -22,7 +21,7 @@ with impression_daily as (
 clicks_daily as (
     select
         cast(artist_event_int_id as integer) as event_id,
-        cast(ds as date) as date,
+        ds as date,
         cast(coalesce(fe_source, 'unknown') as varchar) as fe_source,
         count(*) as ticket_clicks,
         count(distinct user_id) as unique_users_click
@@ -32,7 +31,7 @@ clicks_daily as (
 rsvp_daily as (
     select
         cast(artist_event_int_id as integer) as event_id,
-        cast(ds as date) as date,
+        ds as date,
         cast(coalesce(fe_source, 'unknown') as varchar) as fe_source,
         count(*) as rsvp_events,
         count(distinct user_id) as unique_users_rsvp
@@ -42,6 +41,7 @@ rsvp_daily as (
 
 select
     i.event_id,
+    i.date,
     i.fe_source,
     i.pixel_impressions,
     i.email_impressions,
@@ -52,8 +52,7 @@ select
     coalesce(c.unique_users_click, 0) as unique_users_click,
     coalesce(r.rsvp_events, 0) as rsvp_events,
     coalesce(r.unique_users_rsvp, 0) as unique_users_rsvp,
-    cast(current_timestamp as timestamp) as updated_at,
-    i.date
+    cast(current_timestamp as timestamp) as updated_at
 from impression_daily i
 left join clicks_daily c
     on c.event_id = i.event_id
@@ -63,4 +62,3 @@ left join rsvp_daily r
     on r.event_id = i.event_id
    and r.date = i.date
    and r.fe_source = i.fe_source
-
