@@ -98,6 +98,8 @@ Resources:
             Resource:
               - "arn:aws:s3:::bit-bigdata-daily-state-cycle"
               - "arn:aws:s3:::bit-bigdata-daily-state-cycle/*"
+              - "arn:aws:s3:::bit-master-dataset-backup"
+              - "arn:aws:s3:::bit-master-dataset-backup/*"
               - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}"
               - !Sub "arn:aws:s3:::${self:custom.vars.airflow_environment_bucket_name}/*"
 
