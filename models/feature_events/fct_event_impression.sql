@@ -27,7 +27,7 @@ base_impressions as (
     select
         i.nonce,
         i.artist_event_int_id as event_id,
-        cast(substr(i.ds, 1, 10) as date) as date,
+        cast(i.ds as date) as date,
         coalesce(i.fe_source, fe.fe_source, 'unknown') as fe_source,
         i.impression_channel,
         i.user_id
