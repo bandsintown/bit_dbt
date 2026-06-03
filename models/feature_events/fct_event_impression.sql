@@ -9,8 +9,8 @@ with featured_events as (
     select
         event_id,
         element_at(sources, 1) as fe_source,
-        cast(boost_start_date as date) as boost_start_date,
-        cast(boost_end_date as date) as boost_end_date
+        boost_start_date,
+        boost_end_date
     from (
         select
             *,
@@ -34,7 +34,7 @@ base_impressions as (
     left join featured_events fe
         on fe.event_id = i.artist_event_int_id
     where fe.boost_start_date is null
-       or i.ds >= fe.boost_start_date
+       or cast(i.ds as varchar) >= cast(fe.boost_start_date as varchar)
 ),
 deduped as (
     select
