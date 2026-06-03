@@ -8,7 +8,7 @@
 with featured_events as (
     select
         event_id,
-        element_at(sources, 1) as fe_source,
+        sources as fe_source,
         boost_start_date,
         boost_end_date
     from (
@@ -27,7 +27,7 @@ base_impressions as (
         i.nonce,
         i.artist_event_int_id as event_id,
         i.ds as date,
-        coalesce(i.fe_source, fe.fe_source, 'unknown') as fe_source,
+        coalesce(fe.fe_source, array[coalesce(i.fe_source, 'unknown')]) as fe_source,
         i.impression_channel,
         i.user_id
     from {{ ref('int_featured_event_impressions') }} i
