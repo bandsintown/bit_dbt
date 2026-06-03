@@ -6,14 +6,21 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: AllowMWAARead
+          - Sid: AllowMWAABucketAccess
             Effect: Allow
             Principal:
               AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action:
-              - "s3:GetObject*"
-              - "s3:GetBucket*"
-              - "s3:List*"
+              - "s3:GetBucketLocation"
+              - "s3:ListBucket"
             Resource:
               - !Sub "arn:aws:s3:::bit-dbt-${self:provider.stage}"
+          - Sid: AllowMWAAObjectAccess
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "s3:GetObject"
+              - "s3:GetObjectVersion"
+            Resource:
               - !Sub "arn:aws:s3:::bit-dbt-${self:provider.stage}/*"
