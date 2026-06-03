@@ -9,40 +9,36 @@ with impression_daily as (
     select
         event_id,
         date,
-        fe_source,
         count_if(impression_channel = 'pixel') as pixel_impressions,
         count_if(impression_channel = 'email') as email_impressions,
         count(*) as total_impressions,
         count(distinct nonce) as unique_impressions,
         count(distinct user_id) as unique_users_impression
     from {{ ref('fct_event_impression') }}
-    group by 1, 2, 3
+    group by 1, 2
 ),
 clicks_daily as (
     select
         cast(artist_event_int_id as integer) as event_id,
         ds as date,
-        cast(coalesce(fe_source, 'unknown') as varchar) as fe_source,
         count(*) as ticket_clicks,
         count(distinct user_id) as unique_users_click
     from {{ ref('stg_featured_events_ticket_clicks') }}
-    group by 1, 2, 3
+    group by 1, 2
 ),
 rsvp_daily as (
     select
         cast(artist_event_int_id as integer) as event_id,
         ds as date,
-        cast(coalesce(fe_source, 'unknown') as varchar) as fe_source,
         count(*) as rsvp_events,
         count(distinct user_id) as unique_users_rsvp
     from {{ ref('stg_featured_events_rsvps') }}
-    group by 1, 2, 3
+    group by 1, 2
 )
 
 select
     i.event_id,
     i.date,
-    i.fe_source,
     i.pixel_impressions,
     i.email_impressions,
     i.total_impressions,
@@ -57,8 +53,6 @@ from impression_daily i
 left join clicks_daily c
     on c.event_id = i.event_id
    and c.date = i.date
-   and c.fe_source = i.fe_source
 left join rsvp_daily r
     on r.event_id = i.event_id
    and r.date = i.date
-   and r.fe_source = i.fe_source
