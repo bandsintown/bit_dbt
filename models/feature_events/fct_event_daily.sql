@@ -42,7 +42,6 @@ rsvp_daily as (
 
 select
     i.event_id,
-    i.date,
     i.fe_source,
     i.pixel_impressions,
     i.email_impressions,
@@ -53,7 +52,8 @@ select
     coalesce(c.unique_users_click, 0) as unique_users_click,
     coalesce(r.rsvp_events, 0) as rsvp_events,
     coalesce(r.unique_users_rsvp, 0) as unique_users_rsvp,
-    cast(current_timestamp as timestamp) as updated_at
+    cast(current_timestamp as timestamp) as updated_at,
+    i.date
 from impression_daily i
 left join clicks_daily c
     on c.event_id = i.event_id

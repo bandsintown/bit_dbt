@@ -50,12 +50,10 @@ deduped as (
 select
     nonce,
     event_id,
-    date,
     fe_source,
     impression_channel,
     user_id,
-    cast(current_timestamp as timestamp) as updated_at
+    cast(current_timestamp as timestamp) as updated_at,
+    date
 from deduped
 where rn = 1
-
-
