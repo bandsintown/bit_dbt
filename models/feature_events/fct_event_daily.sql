@@ -22,7 +22,7 @@ with impression_daily as (
 clicks_daily as (
     select
         cast(artist_event_int_id as integer) as event_id,
-        cast(ds as date) as date,
+        cast(substr(ds, 1, 10) as date) as date,
         cast(coalesce(fe_source, 'unknown') as varchar) as fe_source,
         count(*) as ticket_clicks,
         count(distinct user_id) as unique_users_click
@@ -32,7 +32,7 @@ clicks_daily as (
 rsvp_daily as (
     select
         cast(artist_event_int_id as integer) as event_id,
-        cast(ds as date) as date,
+        cast(substr(ds, 1, 10) as date) as date,
         cast(coalesce(fe_source, 'unknown') as varchar) as fe_source,
         count(*) as rsvp_events,
         count(distinct user_id) as unique_users_rsvp
