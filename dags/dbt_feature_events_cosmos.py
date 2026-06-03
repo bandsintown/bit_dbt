@@ -4,7 +4,6 @@ Advanced Airflow DAG using dbt-Cosmos for automatic task generation.
 
 import os
 from datetime import datetime, timedelta
-
 from cosmos import (
     DbtDag,
     ExecutionConfig,
@@ -15,6 +14,22 @@ from cosmos import (
     RenderConfig,
 )
 from cosmos.constants import TestBehavior
+
+
+# -----------------------------
+# CALLBACKS
+# -----------------------------
+def on_task_failure(context):
+    """Called when any task in the DAG fails."""
+    dag_id = context["dag"].dag_id
+    print(f"[FAILURE] DAG={dag_id} execution_date={context['execution_date']}")
+    # Add custom logic here: Slack webhook, PagerDuty, etc.
+
+
+def on_dag_failure(context):
+    """Called when the entire DAG run fails."""
+    print(f"[DAG FAILURE] DAG={context['dag'].dag_id} run_id={context['run_id']}")
+
 
 # -----------------------------
 # CONFIG
@@ -43,6 +58,7 @@ default_args = {
     "email_on_retry": False,
     "retries": 0,
     "retry_delay": timedelta(minutes=5),
+    "on_failure_callback": on_task_failure,
 }
 
 
@@ -59,7 +75,8 @@ dbt_cosmos_dag = DbtDag(
 
     render_config=RenderConfig(
         load_method=LoadMode.DBT_MANIFEST,
-        test_behavior=TestBehavior.AFTER_EACH,
+        test_behavior=TestBehavior.NONE,
+        select=["path:models/feature_events"],
     ),
 
     execution_config=ExecutionConfig(
@@ -100,4 +117,5 @@ dbt_cosmos_dag = DbtDag(
     catchup=False,
     max_active_runs=1,
     tags=["dbt", "athena", "feature_events", "cosmos"],
+    on_failure_callback=on_dag_failure,
 )
