@@ -65,6 +65,7 @@ Resources:
               - glue:CreateDatabase
               - glue:GetTable
               - glue:GetTables
+              - glue:GetTableVersions
               - glue:CreateTable
               - glue:UpdateTable
               - glue:DeleteTable
