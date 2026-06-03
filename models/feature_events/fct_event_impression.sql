@@ -1,6 +1,7 @@
 {{
   config(
     materialized='table',
+    partitioned_by=['date'],
     tags=['feature_events', 'marts', 'kpi']
   )
 }}
@@ -8,7 +9,7 @@
 with featured_events as (
     select
         event_id,
-        sources as fe_source,
+        element_at(sources, 1) as fe_source,
         cast(boost_start_date as date) as boost_start_date,
         cast(boost_end_date as date) as boost_end_date
     from (

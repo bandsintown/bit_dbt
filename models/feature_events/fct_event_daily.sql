@@ -1,6 +1,7 @@
 {{
   config(
     materialized='table',
+    partitioned_by=['date'],
     tags=['feature_events', 'marts', 'kpi']
   )
 }}
