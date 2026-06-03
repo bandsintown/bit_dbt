@@ -10,7 +10,7 @@ select
     cast(ds as date) as ds,
     cast(coalesce(source, 'unknown') as varchar) as fe_source,
     cast(nonce as varchar) as nonce,
-    user_id,
+    cast(user_id as varchar) as user_id,
     cast(status as varchar) as status
 from {{ source('featured_events', 'rsvps') }}
 where artist_event_int_id is not null

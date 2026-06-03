@@ -31,7 +31,7 @@ rsvp_daily as (
         cast(artist_event_int_id as integer) as event_id,
         ds as date,
         count(*) as rsvp_events,
-        count(distinct user_id) as unique_users_rsvp
+        count(distinct cast(user_id as integer)) as unique_users_rsvp
     from {{ ref('stg_featured_events_rsvps') }}
     group by 1, 2
 )
