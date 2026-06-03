@@ -34,7 +34,7 @@ base_impressions as (
     left join featured_events fe
         on fe.event_id = i.artist_event_int_id
     where fe.boost_start_date is null
-       or i.ds >= cast(fe.boost_start_date as varchar)
+       or i.ds >= fe.boost_start_date
 ),
 deduped as (
     select
