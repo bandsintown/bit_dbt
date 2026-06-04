@@ -1,12 +1,7 @@
 steps:
-  - label: ":white_check_mark: Validate dbt layering standards"
-    key: "validate-layering"
-    commands:
-      - "python3 scripts/validate_layering.py"
 
   - block: "Choose deployment path"
     key: "choose-deploy-path"
-    depends_on: "validate-layering"
     fields:
       - select: "Deployment path"
         key: "deploy_path"

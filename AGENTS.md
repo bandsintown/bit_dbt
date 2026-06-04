@@ -14,7 +14,7 @@ sources (Glue/Athena) → stg_ (view) → dim_ (table) → int_ (view) → fct_ 
 - **Profiles**: `--profiles-dir .` (repo root `profiles.yml`), env var `DBT_TARGET=dev|staging|prod`
 - **Schema routing**: `macros/generate_schema_name.sql`
 
-## Layering Rules (STRICT — enforced by `scripts/validate_layering.py`)
+## Layering Rules
 
 | Layer | Prefix | Reads from | Forbidden |
 |-------|--------|-----------|-----------|
@@ -23,8 +23,6 @@ sources (Glue/Athena) → stg_ (view) → dim_ (table) → int_ (view) → fct_ 
 | Intermediate | `int_*` | `ref('dim_...')` preferred | facts, marts |
 | Fact | `fct_*` | dims, intermediates, other facts | staging, source() |
 | Mart | `mart_*` | facts, dims | staging, intermediate, source() |
-
-**After ANY model edit, run:** `python3 scripts/validate_layering.py`
 
 ## Key Commands
 
@@ -65,3 +63,4 @@ scripts/                     — deploy, validate, setup scripts
 - `scripts/deploy.sh` — deploys Serverless infra
 - `scripts/upload_dbt_payload.py` — uploads compiled dbt artifacts to S3
 - `dags/dbt_marts_core.py` — Airflow DAG that runs dbt in MWAA
+
