@@ -8,19 +8,10 @@
 with featured_events as (
     select
         event_id,
-        sources as fe_source,
+        fe_sources as fe_source,
         boost_start_date,
         boost_end_date
-    from (
-        select
-            *,
-            row_number() over (
-                partition by event_id
-                order by tracked_at desc
-            ) as row_num
-        from {{ source('featured_events', 'featured_events_changelog') }}
-    ) fe
-    where row_num = 1
+    from {{ ref('dim_featured_event') }}
 ),
 base_impressions as (
     select
@@ -56,3 +47,4 @@ select
     cast(current_timestamp as timestamp) as updated_at
 from deduped
 where rn = 1
+
