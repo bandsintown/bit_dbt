@@ -15,26 +15,17 @@ with featured_events as (
 ),
 base_impressions as (
     select
-        i.nonce,
-        i.artist_event_int_id as event_id,
-        i.ds as date,
-        coalesce(fe.fe_source, array[coalesce(i.fe_source, 'unknown')]) as fe_source,
-        i.impression_channel,
-        i.user_id
-    from {{ ref('int_featured_event_impressions') }} i
+        d.nonce,
+        d.artist_event_int_id as event_id,
+        d.ds as date,
+        coalesce(fe.fe_source, array[coalesce(d.fe_source, 'unknown')]) as fe_source,
+        d.impression_channel,
+        d.user_id
+    from {{ ref('dim_event_impression') }} d
     left join featured_events fe
-        on fe.event_id = i.artist_event_int_id
+        on fe.event_id = d.artist_event_int_id
     where fe.boost_start_date is null
-       or cast(i.ds as varchar) >= cast(fe.boost_start_date as varchar)
-),
-deduped as (
-    select
-        *,
-        row_number() over (
-            partition by nonce
-            order by date desc, event_id desc
-        ) as rn
-    from base_impressions
+       or cast(d.ds as varchar) >= cast(fe.boost_start_date as varchar)
 )
 
 select
@@ -45,6 +36,4 @@ select
     impression_channel,
     user_id,
     cast(current_timestamp as timestamp) as updated_at
-from deduped
-where rn = 1
-
+from base_impressions
