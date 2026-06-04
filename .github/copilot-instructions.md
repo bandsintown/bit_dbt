@@ -2,43 +2,30 @@
 
 ## MANDATORY: dbt Layering Validation
 
-**Before making ANY changes to files under `models/`, you MUST validate the layering hierarchy.**
+**Before making ANY changes to files under `models/`, you MUST validate the 3-layer hierarchy.**
 
 ### Layer Rules (STRICT — no exceptions)
 
 1. **Staging (`models/staging/stg_*`)**
    - Reads from: `{{ source() }}` ONLY
-   - NO `WHERE`, `JOIN`, `GROUP BY`, `UNION`, `OVER()`, `COALESCE` with defaults
-   - Only `SELECT` + `CAST` + column renaming
+   - Only `SELECT` + `CAST` + column renaming + basic `WHERE` for filtering junk
+   - NO complex JOINs, GROUP BY, aggregations
 
-2. **Dimensions (`models/marts/*/dim_*`)**
+2. **Intermediate (`models/intermediate/int_*`)**
    - Reads from: `{{ ref('stg_...') }}` ONLY
-   - NO dim-to-dim references
-   - NO source() calls
-   - Handles: filtering, deduplication, null checks
+   - CANNOT reference dims, facts, marts, or source()
+   - Handles: joins across staging models, UNION ALL, window functions, pivots, reshaping
 
-3. **Intermediate (`models/intermediate/int_*`)**
-   - Reads from: `{{ ref('dim_...') }}` (preferred) or `{{ ref('stg_...') }}` if no dim exists
-   - CANNOT reference facts or marts
-   - Handles: unions, reshaping, combining dims
-
-4. **Facts (`models/marts/*/fct_*`)**
-   - Reads from: `{{ ref('dim_...') }}`, `{{ ref('int_...') }}`, other `{{ ref('fct_...') }}`
-   - CANNOT reference staging directly
-   - CANNOT reference marts
-
-5. **Marts (`models/marts/*/mart_*`)**
-   - Reads from: `{{ ref('fct_...') }}`, `{{ ref('dim_...') }}`
-   - CANNOT reference staging or intermediate
-
-### Pre-push validation
-
-Always run `python3 scripts/validate_layering.py` after editing models to verify compliance.
+3. **Marts / Core (`models/marts/*/dim_*`, `fct_*`, `mart_*`)**
+   - `dim_*` reads from: `{{ ref('stg_...') }}`, `{{ ref('int_...') }}`, other `{{ ref('dim_...') }}`
+   - `fct_*` reads from: `{{ ref('stg_...') }}`, `{{ ref('int_...') }}`, `{{ ref('dim_...') }}`, other `{{ ref('fct_...') }}`
+   - `mart_*` reads from: `{{ ref('fct_...') }}`, `{{ ref('dim_...') }}`
+   - CANNOT reference `{{ source() }}`
 
 ### Dependency flow
 
 ```
-sources → stg_ → dim_ → int_ → fct_ → mart_
+sources → stg_ → int_ → dim_/fct_/mart_
 ```
 
 ### If you are about to create or edit a model:
@@ -46,7 +33,5 @@ sources → stg_ → dim_ → int_ → fct_ → mart_
 1. Identify which layer it belongs to based on its prefix and location
 2. Check that all `ref()` calls point to allowed layers only
 3. Check that no forbidden SQL operations exist for that layer
-4. Run the validator mentally or suggest running it
 
 **DO NOT suggest or implement code that violates these rules.**
-

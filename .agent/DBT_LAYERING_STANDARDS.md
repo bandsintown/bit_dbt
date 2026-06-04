@@ -1,24 +1,19 @@
 # dbt Layering & Hierarchy Standards
 
 > **This document defines the mandatory layering rules for all dbt models in this project.**
-> Before pushing any changes, all models must be validated against these standards.
 
 ---
 
-## Layer Hierarchy
+## Layer Hierarchy (3-Layer Architecture)
 
 ```
 Sources (raw tables in Glue/Athena)
     ↓
 Staging (stg_*)
     ↓
-Dimensions (dim_*)
-    ↓
 Intermediate (int_*)
     ↓
-Facts (fct_*)
-    ↓
-Marts (mart_*)
+Marts / Core (dim_*, fct_*, mart_*)
 ```
 
 ---
@@ -31,8 +26,9 @@ Marts (mart_*)
 |------|-------------|
 | Reads from | **Sources only** (`{{ source(...) }}`) |
 | Materialization | `view` |
-| Allowed operations | `SELECT`, `CAST`, column renaming |
-| **NOT allowed** | `WHERE`, `JOIN`, `GROUP BY`, `HAVING`, `WINDOW`, `UNION`, business logic, filtering, deduplication, coalesce with defaults |
+| Purpose | 1-to-1 mapping with raw source tables. Standardize column names, cast data types, filter irrelevant records, add surrogate keys |
+| Allowed operations | `SELECT`, `CAST`, column renaming, basic `WHERE` to filter junk/irrelevant records, surrogate key generation |
+| **NOT allowed** | Complex `JOIN`s, `GROUP BY`, aggregations |
 | Naming | `stg_<domain>_<entity>.sql` |
 | One-to-one | Each staging model maps to exactly one source table |
 
@@ -46,80 +42,55 @@ select
 from {{ source('featured_events', 'pixelactivities') }}
 ```
 
-**Example (WRONG — has WHERE):**
-```sql
-select ...
-from {{ source('featured_events', 'pixelactivities') }}
-where nonce is not null  -- ❌ filtering belongs in dim or intermediate
-```
-
 ---
 
-### 2. Dimensions (`models/marts/<domain>/dim_*`)
+### 2. Intermediate (`models/intermediate/`)
 
 | Rule | Description |
 |------|-------------|
 | Reads from | **Staging only** (`{{ ref('stg_...') }}`) |
-| Materialization | `table` |
-| Allowed operations | Filtering (`WHERE`), deduplication (`ROW_NUMBER`), null checks, type coercion |
-| Purpose | One row per entity (deduplicated, clean, filtered master data) |
-| Naming | `dim_<entity>.sql` |
-
-**Example:**
-```sql
-with deduped as (
-    select *, row_number() over (partition by nonce order by ds desc) as row_num
-    from {{ ref('stg_featured_events_rsvps') }}
-    where nonce is not null and artist_event_int_id is not null
-)
-select ... from deduped where row_num = 1
-```
-
----
-
-### 3. Intermediate (`models/intermediate/`)
-
-| Rule | Description |
-|------|-------------|
-| Reads from | **Dimensions** (`{{ ref('dim_...') }}`) or **Staging** (only if no dim exists for that entity) |
-| Materialization | `view` |
-| Allowed operations | `UNION ALL`, `JOIN`, pivots, reshaping, window functions for combining data |
-| **NOT allowed** | Filtering that should be in dims (null checks, validity, dedup) |
-| Purpose | Combine/reshape cleaned data from multiple dims into a unified schema |
+| Materialization | `view` (or `table` if the dataset is massive) |
+| Purpose | Complex business logic to prepare data for the presentation layer. Join multiple staging models, pivot data, apply window functions, compute row-level metrics |
+| Allowed operations | `JOIN`, `UNION ALL`, `GROUP BY`, window functions (`ROW_NUMBER`, `OVER()`), pivots, reshaping, deduplication, null filtering |
+| Note | Business users rarely query this layer directly; it is a building block for marts |
 | Naming | `int_<description>.sql` |
 
 **Example:**
 ```sql
-select ... from {{ ref('dim_featured_events_pixel_impressions') }}
+select ... from {{ ref('stg_featured_events_pixel_impressions') }}
 union all
-select ... from {{ ref('dim_featured_events_email_impressions') }}
+select ... from {{ ref('stg_featured_events_email_impressions') }}
 ```
 
 ---
 
-### 4. Facts (`models/marts/<domain>/fct_*`)
+### 3. Marts / Core (`models/marts/<domain>/`)
+
+This is the **presentation layer** — the "public API" for BI tools and analysts.
+
+#### Dimensions (`dim_*`)
 
 | Rule | Description |
 |------|-------------|
-| Reads from | **Dimensions** and/or **Intermediate** (`{{ ref('dim_...') }}`, `{{ ref('int_...') }}`) |
+| Reads from | `{{ ref('stg_...') }}`, `{{ ref('int_...') }}`, other `{{ ref('dim_...') }}` |
 | Materialization | `table` |
-| Allowed operations | Joins between dims/intermediate, grain-level event recording, aggregation per grain |
-| **NOT allowed** | Reading directly from staging, raw filtering that should be in dims |
+| Purpose | One row per entity — deduplicated, clean master data |
+
+#### Facts (`fct_*`)
+
+| Rule | Description |
+|------|-------------|
+| Reads from | `{{ ref('int_...') }}`, `{{ ref('dim_...') }}`, `{{ ref('stg_...') }}`, other `{{ ref('fct_...') }}` |
+| Materialization | `table` |
 | Purpose | One row per event/transaction at the defined grain |
-| Naming | `fct_<entity>_<grain>.sql` |
 
----
-
-### 5. Marts (`models/marts/<domain>/mart_*`)
+#### Marts (`mart_*`)
 
 | Rule | Description |
 |------|-------------|
-| Reads from | **Facts** and/or **Dimensions** (`{{ ref('fct_...') }}`, `{{ ref('dim_...') }}`) |
+| Reads from | `{{ ref('fct_...') }}`, `{{ ref('dim_...') }}` |
 | Materialization | `table` |
-| Allowed operations | Aggregation, rollups, summaries for end-user consumption |
-| **NOT allowed** | Reading from staging or intermediate |
 | Purpose | Pre-aggregated summaries optimized for BI/reporting |
-| Naming | `mart_<description>.sql` |
 
 ---
 
@@ -127,33 +98,28 @@ select ... from {{ ref('dim_featured_events_email_impressions') }}
 
 | Layer | Can reference |
 |-------|--------------|
-| `stg_*` | sources only |
-| `dim_*` | `stg_*` only |
-| `int_*` | `dim_*` (preferred), `stg_*` (only if no dim exists) |
-| `fct_*` | `dim_*`, `int_*`, other `fct_*` |
+| `stg_*` | `source()` only |
+| `int_*` | `stg_*` only |
+| `dim_*` | `stg_*`, `int_*`, other `dim_*` |
+| `fct_*` | `stg_*`, `int_*`, `dim_*`, other `fct_*` |
 | `mart_*` | `fct_*`, `dim_*` |
 
 **Never allowed:**
-- ❌ `fct_*` → `stg_*`
-- ❌ `mart_*` → `stg_*`
-- ❌ `mart_*` → `int_*`
-- ❌ `dim_*` → `dim_*` (no dim-to-dim references)
 - ❌ `stg_*` → anything other than sources
+- ❌ `int_*` → `dim_*`, `fct_*`, `mart_*`
+- ❌ `mart_*` → `stg_*`, `int_*`
 
 ---
 
 ## Pre-Push Checklist
 
-Before pushing any model changes, verify:
-
-- [ ] **Staging models** have NO `WHERE`, `JOIN`, `GROUP BY`, or business logic
-- [ ] **Dimensions** read ONLY from staging
-- [ ] **Intermediate** reads from dimensions (or staging if no dim exists)
-- [ ] **Facts** read from dimensions/intermediate — NOT from staging
-- [ ] **Marts** read from facts/dimensions — NOT from staging or intermediate
+- [ ] **Staging models** have NO complex JOINs or aggregations
+- [ ] **Intermediate** reads ONLY from staging
+- [ ] **Dims/Facts** read from staging, intermediate, or other marts — NOT from sources
+- [ ] **Marts** read from facts/dims — NOT from staging or intermediate
 - [ ] **No circular dependencies** exist
-- [ ] **Model naming** follows `stg_`, `dim_`, `int_`, `fct_`, `mart_` prefixes
-- [ ] **Materialization** is correct: staging/intermediate = `view`, dims/facts/marts = `table`
+- [ ] **Model naming** follows `stg_`, `int_`, `dim_`, `fct_`, `mart_` prefixes
+- [ ] **Materialization** is correct: staging/intermediate = `view`, marts = `table`
 - [ ] **`dbt compile`** succeeds without errors
 
 ---
@@ -174,4 +140,3 @@ models/
       fct_<entity>.sql
       mart_<description>.sql
 ```
-
