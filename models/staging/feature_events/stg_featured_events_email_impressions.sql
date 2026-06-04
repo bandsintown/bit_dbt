@@ -10,7 +10,7 @@ select
     cast(ds as date) as ds,
     cast('email' as varchar) as fe_source,
     cast(nonce as varchar) as nonce,
-    cast(user_id as integer) as user_id,
+    cast(cast(user_id as varchar) as integer) as user_id,
     cast(useragent as varchar) as user_agent,
     cast(category as varchar) as category,
     cast(event as varchar) as event,
