@@ -1,0 +1,34 @@
+# DataHub dbt ingestion recipe
+# Docs: https://datahubproject.io/docs/generated/ingestion/sources/dbt
+#
+# Usage:
+#   datahub ingest -c datahub/dbt_ingestion.yml
+#
+# Prerequisites:
+#   pip install 'acryl-datahub[dbt]'
+#   dbt docs generate --profiles-dir .   (to produce catalog.json)
+
+source:
+  type: dbt
+  config:
+    # -- dbt artifacts (local paths, relative to repo root) --
+    manifest_path: "target/manifest.json"
+    catalog_path: "target/catalog.json"
+    run_results_path: "target/run_results.json"
+
+    # -- Map dbt nodes to the correct Athena platform --
+    target_platform: athena
+
+    # -- Environment tag (PROD / DEV) --
+    env: "${DATAHUB_ENV:=PROD}"
+
+    # -- Schema resolution: use Athena catalog names --
+    node_name_pattern:
+      allow:
+        - ".*"
+
+sink:
+  type: datahub-rest
+  config:
+    server: "${DATAHUB_GMS_URL:=https://datahub.bandsintown.com/api/gms}"
+    token: "${DATAHUB_GMS_TOKEN}"

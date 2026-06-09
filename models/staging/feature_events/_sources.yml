@@ -5,9 +5,18 @@ sources:
     database: "{{ target.database }}"
     schema: featured_events
     tables:
+      - name: featured_events
       - name: featured_events_changelog
+      - name: feature_events
       - name: pixelactivities
+      - name: pixel_impresion_v2
       - name: email_real_opens
       - name: ticketclicks
       - name: rsvps
+      - name: alacarte_promoter_events
+      - name: alacarte_promoter_packages
+#      - name: alacarte_artists_events
+#      - name: alacarte_artists_packages
+
+
 
