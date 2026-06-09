@@ -24,29 +24,21 @@ require-dbt-version: [">=1.7.0", "<2.0.0"]
 # Global model configurations
 models:
   bandsintown:
-    # Staging models - typically views for initial transformations
     staging:
       +materialized: view
       +tags: ["staging"]
-      +schema: staging
-    
-    # Intermediate models - views for business logic
     intermediate:
       +materialized: view
       +tags: ["intermediate"]
-      +schema: intermediate
-    
-    # Marts - tables for final consumption
     marts:
       +materialized: table
       +tags: ["marts"]
-      +schema: analytics
-
-    # Feature events domain models
-    feature_events:
-      +materialized: view
-      +tags: ["feature_events"]
-      +schema: bit_dbt_prod
+      +format: parquet
+      +write_compression: snappy
+      core:
+        +schema: analytics
+      feature_events:
+        +schema: bit_dbt_feature_events
 # Documentation
 vars:
   # Timezone for timestamp conversions

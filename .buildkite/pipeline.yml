@@ -1,4 +1,5 @@
 steps:
+
   - block: "Choose deployment path"
     key: "choose-deploy-path"
     fields:

@@ -19,20 +19,20 @@ with impression_daily as (
 ),
 clicks_daily as (
     select
-        cast(artist_event_int_id as integer) as event_id,
+        artist_event_int_id as event_id,
         ds as date,
         count(*) as ticket_clicks,
         count(distinct user_id) as unique_users_click
-    from {{ ref('stg_featured_events_ticket_clicks') }}
+    from {{ ref('dim_featured_events_ticket_clicks') }}
     group by 1, 2
 ),
 rsvp_daily as (
     select
-        cast(artist_event_int_id as integer) as event_id,
+        artist_event_int_id as event_id,
         ds as date,
         count(*) as rsvp_events,
         count(distinct user_id) as unique_users_rsvp
-    from {{ ref('stg_featured_events_rsvps') }}
+    from {{ ref('dim_featured_events_rsvps') }}
     group by 1, 2
 )
 
