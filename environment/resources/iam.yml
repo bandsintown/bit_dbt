@@ -96,6 +96,8 @@ Resources:
               - "s3:GetBucket*"
               - "s3:List*"
             Resource:
+              - "arn:aws:s3:::bit-bigdata-state-cycle"
+              - "arn:aws:s3:::bit-bigdata-state-cycle/*"
               - "arn:aws:s3:::bit-bigdata-daily-state-cycle"
               - "arn:aws:s3:::bit-bigdata-daily-state-cycle/*"
               - "arn:aws:s3:::bit-master-dataset-backup"

@@ -31,4 +31,4 @@ sink:
   type: datahub-rest
   config:
     server: "${DATAHUB_GMS_URL:=https://datahub.bandsintown.com/api/gms}"
-    token: "${DATAHUB_GMS_TOKEN}"
+    token: "${DATAHUB_GMS_TOKEN:=prod-datahub-gms-token}"
