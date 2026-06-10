@@ -29,7 +29,7 @@ select
     fe.artist_id,
     fe.venue_id,
     fe.festival_id,
-    fe.sources as fe_sources,
+    fe.fe_source,
     fe.boost_start_date,
     fe.boost_end_date,
     cl.campaign_flat_fee,

@@ -11,7 +11,7 @@ with featured_events as (
     select
         event_id,
         artist_id,
-        fe_sources as fe_source,
+        fe_source,
         boost_start_date,
         boost_end_date
     from {{ ref('dim_featured_event') }}
@@ -22,7 +22,7 @@ select
     d.artist_event_int_id as event_id,
     fe.artist_id,
     d.ds as date,
-    coalesce(fe.fe_source, array[coalesce(d.fe_source, 'unknown')]) as fe_source,
+    coalesce(fe.fe_source, d.fe_source, 'unknown') as fe_source,
     d.impression_channel,
     d.user_id,
     cast(current_timestamp as timestamp) as updated_at

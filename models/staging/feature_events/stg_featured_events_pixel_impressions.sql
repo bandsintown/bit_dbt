@@ -16,5 +16,5 @@ select
     cast(referer as varchar) as referer,
     cast(ip_address as varchar) as ip_address,
     cast(property as varchar) as property,
-    fe_sources
+    fe_source
 from {{ source('featured_events', 'pixelactivities') }}
