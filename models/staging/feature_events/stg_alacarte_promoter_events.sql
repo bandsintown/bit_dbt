@@ -9,14 +9,15 @@ select
     cast(cast(id as varchar) as integer) as id,
     cast(cast(event_id as varchar) as integer) as event_id,
     cast(reason as varchar) as reason,
-    cast(start_date as timestamp) as start_date,
-    cast(pixels as varchar) as pixels,
+    from_unixtime(start_date) as start_date,
+    json_format(cast(pixels as json)) as pixels,
     cast(info as varchar) as info,
     cast(cast(package_id as varchar) as integer) as package_id,
     cast(created_by as varchar) as created_by,
     cast(updated_by as varchar) as updated_by,
-    cast(created_at as timestamp) as created_at,
-    cast(updated_at as timestamp) as updated_at,
-    cast(deleted as boolean) as deleted
+    from_unixtime(created_at) as created_at,
+    from_unixtime(updated_at) as updated_at,
+    cast(deleted as boolean) as deleted,
+    cast(genres as varchar) as genres
 from {{ source('featured_events', 'alacarte_promoter_events') }}
 
