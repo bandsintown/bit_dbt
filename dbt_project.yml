@@ -55,7 +55,7 @@ tests:
 # Seeds configuration
 seeds:
   bandsintown:
-    +schema: seed_data
+    +schema: bit_dbt_feature_events
     +quote_columns: false
     came_from_traffic_source:
       +column_types:
