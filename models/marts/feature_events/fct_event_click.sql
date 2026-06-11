@@ -36,12 +36,10 @@ select
         else 'other'
     end as placement_type,
 
-    -- traffic_source_category
+    -- traffic_source_category (via seed lookup)
     case
-        when tc.came_from in (242, 267, 269, 700, 702) then 'artist_property'
-        when tc.came_from in (280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 990) then 'distribution_partner'
         when tc.came_from is null then 'unknown'
-        else 'bandsintown_owned'
+        else coalesce(cf.traffic_source_category, 'bandsintown_owned')
     end as traffic_source_category,
 
     -- nonce: email only, null for web/app/partner
@@ -49,13 +47,9 @@ select
 
     tc.click_datetime as clicked_at,
 
-    -- is_ticket_link_click
-    case
-        when tc.ticket_seller_url is not null and tc.ticket_seller_url != '' then true
-        else false
-    end as is_ticket_link_click,
-
     cast(current_timestamp as timestamp) as updated_at
 from {{ ref('dim_featured_events_ticket_clicks') }} tc
 left join {{ ref('dim_featured_event') }} fe
     on fe.event_id = tc.artist_event_int_id
+left join {{ ref('came_from_traffic_source') }} cf
+    on cf.came_from = tc.came_from

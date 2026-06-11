@@ -19,6 +19,16 @@ source:
     # -- Map dbt nodes to the correct Athena platform --
     target_platform: athena
 
+    # -- Propagate descriptions, tags, and owners to DataHub --
+    enable_meta_mapping: true
+    write_semantics: PATCH
+    entities_enabled:
+      models: YES
+      sources: YES
+      seeds: YES
+      test_definitions: YES
+      test_results: YES
+
     # -- Environment tag (PROD / DEV) --
     env: "${DATAHUB_ENV:=PROD}"
 

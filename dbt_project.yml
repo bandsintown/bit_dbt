@@ -57,4 +57,8 @@ seeds:
   bandsintown:
     +schema: seed_data
     +quote_columns: false
+    came_from_traffic_source:
+      +column_types:
+        came_from: integer
+        traffic_source_category: varchar
 

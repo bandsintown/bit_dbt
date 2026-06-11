@@ -20,6 +20,7 @@ select
     cast(updated_by as varchar) as updated_by,
     from_unixtime(created_at) as created_at,
     from_unixtime(updated_at) as updated_at,
-    cast(deleted as boolean) as deleted
+    cast(deleted as boolean) as deleted,
+    cast(price as decimal(10,2)) as price
 from {{ source('featured_events', 'alacarte_promoter_packages') }}
 

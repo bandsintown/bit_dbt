@@ -1,0 +1,473 @@
+version: 2
+
+models:
+  # ── Dimensions ──────────────────────────────────────────────
+
+  - name: dim_event_impression
+    description: >
+      Dimension: deduplicated impressions (one row per nonce).
+      Sourced from pixel v1, pixel v2, and email impression streams.
+    columns:
+      - name: artist_event_int_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: ds
+        description: "Partition date from the source data."
+      - name: fe_source
+        description: "Featured event source identifier from the upstream pixel/email data."
+      - name: nonce
+        description: "Unique impression identifier. Used for deduplication."
+        tests: [unique, not_null]
+      - name: user_id
+        description: "Fan user ID who received the impression. Null for pixel_v2 data."
+      - name: pixel_source
+        description: "Raw source field from pixel data. Null for email impressions."
+      - name: property
+        description: "Platform property where the impression was served (e.g. ios_fan_app, android_fan_app, bit_web_v1). Null for email."
+      - name: impression_logged_at
+        description: "Timestamp when the impression was recorded."
+      - name: impression_channel
+        description: "Channel of the impression: pixel (v1 organic), pixel_v2 (boosted), or email."
+        tests:
+          - accepted_values:
+              values: ['pixel', 'pixel_v2', 'email']
+
+  - name: dim_featured_event
+    description: >
+      Dimension: one row per featured event.
+      Enriched with latest campaign/goal fields from the changelog.
+    columns:
+      - name: event_id
+        description: "Primary key. Internal featured event ID."
+        tests: [unique, not_null]
+      - name: artist_id
+        description: "Performer artist ID. FK to dim_artist."
+        tests: [not_null]
+      - name: venue_id
+        description: "Venue ID where the event takes place."
+      - name: festival_id
+        description: "Festival ID if the event is part of a festival. Null otherwise."
+      - name: fe_source
+        description: "Featured event source (e.g. alacarte, self-serve)."
+      - name: boost_start_date
+        description: "Date the boost campaign started for this event."
+      - name: boost_end_date
+        description: "Date the boost campaign ended. Null if still active."
+      - name: campaign_flat_fee
+        description: "Flat fee charged for the boost campaign. Used for revenue allocation."
+      - name: urgency_score
+        description: "Urgency score from the latest changelog entry."
+      - name: cpc_goal_met
+        description: "Whether the CPC goal was met for this event."
+      - name: cpm_goal_met
+        description: "Whether the CPM goal was met for this event."
+      - name: campaign_state
+        description: "Current state of the campaign (e.g. active, completed, paused)."
+      - name: goal_achieved
+        description: "Whether the overall campaign goal was achieved."
+      - name: last_tracked_at
+        description: "Timestamp of the latest changelog entry."
+
+  - name: dim_featured_events_rsvps
+    description: >
+      Dimension: deduplicated RSVPs (one row per nonce).
+    columns:
+      - name: artist_event_int_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: ds
+        description: "Partition date of the RSVP."
+      - name: fe_source
+        description: "Featured event source identifier."
+      - name: nonce
+        description: "Unique RSVP identifier. Used for deduplication."
+        tests: [unique, not_null]
+      - name: user_id
+        description: "Fan user ID who made the RSVP."
+      - name: status
+        description: "RSVP status (e.g. interested, going)."
+
+  - name: dim_featured_events_ticket_clicks
+    description: >
+      Dimension: ticket clicks (one row per click).
+      Enriched with utm_medium and utm_campaign extracted from raw JSON.
+    columns:
+      - name: artist_event_int_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: ds
+        description: "Partition date of the click."
+      - name: fe_source
+        description: "Featured event source identifier."
+      - name: click_datetime
+        description: "Timestamp when the ticket click occurred."
+      - name: user_id
+        description: "Fan user ID who clicked."
+      - name: user_agent
+        description: "Browser/device user agent string."
+      - name: artist
+        description: "Artist name associated with the event."
+      - name: event_region
+        description: "Geographic region of the event."
+      - name: event_country
+        description: "Country of the event."
+      - name: event_city
+        description: "City of the event."
+      - name: ticket_seller_url
+        description: "Full URL of the ticket seller page."
+      - name: ticket_seller_host
+        description: "Hostname of the ticket seller (e.g. ticketmaster.com)."
+      - name: mobile
+        description: "Whether the click came from a mobile device."
+      - name: referer_host
+        description: "Hostname of the referring page."
+      - name: referer
+        description: "Full referrer URL."
+      - name: app_id
+        description: "Application identifier for the click source."
+      - name: affil_code
+        description: "Affiliate tracking code."
+      - name: ip
+        description: "IP address of the user."
+      - name: came_from
+        description: "Numeric source code identifying traffic origin. Maps to traffic_source_category via came_from_traffic_source seed."
+      - name: utm_medium
+        description: "UTM medium extracted from JSON. Used for surface detection (ios, android, web)."
+      - name: utm_campaign
+        description: "UTM campaign extracted from JSON. Used for placement_type detection (feature_event = boosted)."
+
+  # ── Facts ───────────────────────────────────────────────────
+
+  - name: fct_event_impression
+    description: >
+      Fact: one row per nonce. Boosted events only.
+      Carries artist_id (raw FK to dim_artist).
+      Does NOT carry package_id or promoter_id — join through dim_boost_package_events.
+    columns:
+      - name: nonce
+        description: "Unique impression identifier from upstream."
+        tests: [unique, not_null]
+      - name: event_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: artist_id
+        description: "Performer artist ID. FK to dim_artist."
+      - name: fan_id
+        description: "Fan user ID who received the impression."
+      - name: surface
+        description: "Impression surface: email, app_ios, app_android, or web. Derived from property field."
+      - name: placement_type
+        description: "Whether the impression is boosted (pixel_v2, email) or organic (pixel v1)."
+        tests:
+          - accepted_values:
+              values: ['boosted', 'organic']
+      - name: impression_logged_at
+        description: "Timestamp when the impression was recorded."
+
+  - name: fct_event_click
+    description: >
+      Fact: one row per click_id. All clicks, all sources.
+      placement_type reliable for email only.
+      Carries artist_id (raw FK to dim_artist). No package_id or promoter_id columns.
+    columns:
+      - name: click_id
+        description: "Surrogate key. Row number ordered by click_datetime, event_id, user_id."
+        tests: [unique, not_null]
+      - name: event_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: artist_id
+        description: "Performer artist ID. FK to dim_artist."
+      - name: fan_id
+        description: "Fan user ID who clicked."
+      - name: surface
+        description: "Click surface: email, app_ios, app_android, web, or other. Derived from utm_medium."
+      - name: placement_type
+        description: "boosted (email or utm_campaign contains feature_event), organic (known surface, no feature_event), or unknown."
+        tests:
+          - accepted_values:
+              values: ['boosted', 'organic', 'unknown']
+      - name: traffic_source_category
+        description: "Traffic origin category derived from came_from code via seed lookup: artist_property, distribution_partner, bandsintown_owned, or unknown."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['bandsintown_owned', 'distribution_partner', 'artist_property', 'unknown']
+      - name: nonce
+        description: "Email impression nonce. Null for web/app/partner clicks."
+      - name: clicked_at
+        description: "Timestamp when the click occurred."
+        tests: [not_null]
+      - name: updated_at
+        description: "Row-level timestamp of when the record was last materialized."
+
+  - name: fct_event_daily
+    description: >
+      Fact: one row per event × date.
+      Aggregates impressions, clicks, and RSVPs. Computes boost_ctr_email.
+    columns:
+      - name: event_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: artist_id
+        description: "Performer artist ID. FK to dim_artist."
+      - name: date
+        description: "Calendar date of the activity."
+        tests: [not_null]
+      - name: pixel_impressions
+        description: "Count of non-email impressions on this date."
+      - name: email_impressions
+        description: "Count of email impressions on this date."
+      - name: total_impressions
+        description: "Total impressions (pixel + email) on this date."
+      - name: unique_impressions
+        description: "Count of distinct nonces (unique impressions) on this date."
+      - name: unique_users_impression
+        description: "Count of distinct fan_ids who received impressions on this date."
+      - name: ticket_clicks
+        description: "Total ticket clicks on this date."
+      - name: unique_users_click
+        description: "Count of distinct fans who clicked on this date."
+      - name: email_clicks
+        description: "Count of clicks originating from email on this date."
+      - name: rsvp_events
+        description: "Count of RSVPs on this date."
+      - name: unique_users_rsvp
+        description: "Count of distinct fans who RSVPed on this date."
+      - name: boost_ctr_email
+        description: "Email click-through rate: email_clicks / email_impressions. 0 if no email impressions."
+      - name: updated_at
+        description: "Row-level timestamp of when the record was last materialized."
+
+  - name: fct_boost_event_inventory
+    description: >
+      Fact: one row per event.
+      Lifetime impression and user counts with size bucketing.
+    columns:
+      - name: event_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: artist_id
+        description: "Performer artist ID. FK to dim_artist."
+      - name: boost_start_date
+        description: "Boost campaign start date."
+      - name: boost_end_date
+        description: "Boost campaign end date. Null if still active."
+      - name: campaign_state
+        description: "Current campaign state."
+      - name: campaign_flat_fee
+        description: "Flat fee for the boost campaign."
+      - name: lifetime_impressions
+        description: "Total impressions across the event's entire boost lifetime."
+      - name: lifetime_unique_users
+        description: "Total distinct fans who received impressions over the event's lifetime."
+      - name: size_quintile
+        description: "Event size quintile (1–5) based on lifetime_impressions, via NTILE(5)."
+      - name: size_bucket
+        description: "Event size bucket: no_activity, xs (<100), small (<1K), medium (<10K), large (<100K), xl (≥100K)."
+        tests:
+          - accepted_values:
+              values: ['no_activity', 'xs', 'small', 'medium', 'large', 'xl']
+      - name: updated_at
+        description: "Row-level timestamp of when the record was last materialized."
+
+  - name: fct_boost_inventory_daily
+    description: >
+      Fact: one row per date.
+      Daily counts of active/new boosted events, promoters, and packages.
+    columns:
+      - name: date
+        description: "Calendar date."
+        tests: [not_null]
+      - name: boost_events_active
+        description: "Count of distinct events with an active boost on this date."
+      - name: boost_events_new
+        description: "Count of distinct events whose boost started on this date."
+      - name: boost_promoter_count_active
+        description: "Count of distinct promoters with at least one active boost on this date."
+      - name: boost_packages_active
+        description: "Count of distinct packages with at least one active boost on this date."
+      - name: updated_at
+        description: "Row-level timestamp of when the record was last materialized."
+
+  - name: fct_boost_package_event
+    description: >
+      Fact: one row per package × event.
+      Aggregated impressions, clicks, RSVPs, revenue allocation, and eCPC/eCPM at the event level.
+    columns:
+      - name: package_id
+        description: "Promoter package ID. FK to stg_alacarte_promoter_packages.id."
+        tests: [not_null]
+      - name: event_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: promoter_id
+        description: "Promoter ID from the package."
+      - name: package_name
+        description: "Name of the promoter package."
+      - name: artist_id
+        description: "Performer artist ID. FK to dim_artist."
+      - name: boost_start_date
+        description: "Boost campaign start date for the event."
+      - name: boost_end_date
+        description: "Boost campaign end date for the event."
+      - name: boost_revenue_allocated
+        description: "Revenue allocated to this event from the campaign flat fee."
+      - name: total_impressions
+        description: "Total impressions for this event."
+      - name: total_unique_impressions
+        description: "Total unique impressions (distinct nonces) for this event."
+      - name: total_clicks
+        description: "Total ticket clicks for this event."
+      - name: total_rsvps
+        description: "Total RSVPs for this event."
+      - name: total_unique_users
+        description: "Total distinct fans who received impressions."
+      - name: first_activity_date
+        description: "Earliest date of any activity for this event."
+      - name: last_activity_date
+        description: "Latest date of any activity for this event."
+      - name: active_days
+        description: "Number of distinct dates with activity."
+      - name: boost_ecpc_event
+        description: "Effective cost per click at the event level: revenue / clicks. Null if no clicks."
+      - name: boost_ecpm_event
+        description: "Effective cost per mille at the event level: (revenue / impressions) × 1000. Null if no impressions."
+      - name: updated_at
+        description: "Row-level timestamp of when the record was last materialized."
+
+  - name: fct_boost_package_event_daily
+    description: >
+      Fact: one row per package × event × date.
+      Daily breakdown of impressions, clicks, and RSVPs per package-event.
+    columns:
+      - name: package_id
+        description: "Promoter package ID."
+      - name: event_id
+        description: "Internal featured event ID."
+      - name: date
+        description: "Calendar date."
+
+  - name: fct_boost_package
+    description: >
+      Fact: one row per package.
+      Aggregated KPIs: revenue, eCPC, eCPM, goal status, and repeat exposure rate.
+    columns:
+      - name: package_id
+        description: "Primary key. Promoter package ID."
+        tests: [unique, not_null]
+      - name: promoter_id
+        description: "Promoter ID who owns this package."
+      - name: package_name
+        description: "Name of the promoter package."
+      - name: package_status
+        description: "Current package status (e.g. active, completed)."
+      - name: package_type
+        description: "Package type (e.g. self-serve, managed)."
+      - name: boost_revenue_recognized
+        description: "Total revenue recognized across all events in the package."
+      - name: total_impressions
+        description: "Total impressions across all events in the package."
+      - name: total_unique_impressions
+        description: "Total unique impressions across all events."
+      - name: total_clicks
+        description: "Total ticket clicks across all events."
+      - name: total_rsvps
+        description: "Total RSVPs across all events."
+      - name: event_count
+        description: "Number of distinct events in this package."
+      - name: first_activity_date
+        description: "Earliest activity date across all events."
+      - name: last_activity_date
+        description: "Latest activity date across all events."
+      - name: boost_ecpc_package
+        description: "Effective cost per click at the package level: revenue / clicks. Null if no clicks."
+      - name: boost_ecpm_package
+        description: "Effective cost per mille at the package level: (revenue / impressions) × 1000. Null if no impressions."
+      - name: boost_ecpc_meets_target
+        description: "Whether all events in the package met their CPC goal."
+      - name: boost_repeat_exposure_rate
+        description: "Ratio of fans exposed to more than one event in the package to total unique fans."
+      - name: updated_at
+        description: "Row-level timestamp of when the record was last materialized."
+
+  - name: fct_boost_package_daily
+    description: >
+      Fact: one row per package × date.
+      Cumulative eCPC/eCPM and daily pacing metrics for trend analysis.
+    columns:
+      - name: package_id
+        description: "Promoter package ID."
+        tests: [not_null]
+      - name: promoter_id
+        description: "Promoter ID who owns this package."
+      - name: package_name
+        description: "Name of the promoter package."
+      - name: package_status
+        description: "Current package status."
+      - name: package_type
+        description: "Package type."
+      - name: date
+        description: "Calendar date."
+        tests: [not_null]
+      - name: daily_impressions
+        description: "Impressions on this date across all events in the package."
+      - name: daily_unique_impressions
+        description: "Unique impressions on this date."
+      - name: daily_clicks
+        description: "Ticket clicks on this date."
+      - name: daily_rsvps
+        description: "RSVPs on this date."
+      - name: daily_unique_users
+        description: "Distinct fans receiving impressions on this date."
+      - name: cumulative_impressions
+        description: "Running total of impressions from the package start to this date."
+      - name: cumulative_clicks
+        description: "Running total of clicks from the package start to this date."
+      - name: boost_ecpc_cumulative
+        description: "Cumulative eCPC: revenue / cumulative_clicks. Null if no clicks yet."
+      - name: boost_ecpm_cumulative
+        description: "Cumulative eCPM: (revenue / cumulative_impressions) × 1000. Null if no impressions yet."
+      - name: days_elapsed
+        description: "Number of days since the first activity date for this package."
+      - name: avg_daily_impressions
+        description: "Average daily impressions: cumulative_impressions / days_elapsed."
+      - name: avg_daily_clicks
+        description: "Average daily clicks: cumulative_clicks / days_elapsed."
+      - name: updated_at
+        description: "Row-level timestamp of when the record was last materialized."
+
+  # ── Marts ───────────────────────────────────────────────────
+
+  - name: mart_featured_event_performance
+    description: >
+      Mart: lifetime performance per featured event.
+      Aggregates impressions, clicks, and RSVPs across all dates.
+    columns:
+      - name: event_id
+        description: "Internal featured event ID. FK to dim_featured_event.event_id."
+        tests: [not_null]
+      - name: fe_source
+        description: "Featured event source identifier."
+      - name: boost_start_date
+        description: "Boost campaign start date."
+      - name: boost_end_date
+        description: "Boost campaign end date. Null if still active."
+      - name: total_pixel_impressions
+        description: "Lifetime non-email impressions."
+      - name: total_email_impressions
+        description: "Lifetime email impressions."
+      - name: total_impressions
+        description: "Lifetime total impressions."
+      - name: total_unique_impressions
+        description: "Lifetime unique impressions (distinct nonces)."
+      - name: total_ticket_clicks
+        description: "Lifetime ticket clicks."
+      - name: total_rsvps
+        description: "Lifetime RSVPs."
+      - name: first_activity_date
+        description: "Earliest date of any activity."
+      - name: last_activity_date
+        description: "Latest date of any activity."
+      - name: active_days
+        description: "Number of distinct dates with activity."
