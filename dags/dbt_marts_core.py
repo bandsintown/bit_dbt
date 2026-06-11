@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from cosmos import (
-    DbtSeedVirtualenvOperator,
     DbtTaskGroup,
     ExecutionConfig,
     ExecutionMode,
@@ -19,6 +18,7 @@ from cosmos import (
     RenderConfig,
 )
 from cosmos.constants import TestBehavior
+from cosmos.operators.virtualenv import DbtSeedVirtualenvOperator
 
 DBT_PROJECT_LOCAL_PATH = "/usr/local/airflow/dags/dependencies/dbt/project"
 DBT_MANIFEST_PATH = os.path.join(DBT_PROJECT_LOCAL_PATH, "target", "manifest.json")
