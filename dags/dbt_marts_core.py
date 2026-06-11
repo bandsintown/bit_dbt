@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from cosmos import (
-    DbtSeedLocalOperator,
+    DbtSeedVirtualenvOperator,
     DbtTaskGroup,
     ExecutionConfig,
     ExecutionMode,
@@ -67,7 +67,7 @@ with DAG(
         },
     )
 
-    seed = DbtSeedLocalOperator(
+    seed = DbtSeedVirtualenvOperator(
         task_id="dbt_seed",
         project_dir=DBT_PROJECT_LOCAL_PATH,
         profile_config=ProfileConfig(
