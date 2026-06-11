@@ -25,5 +25,6 @@ select
     cast(cast(came_from as varchar) as integer) as came_from,
     cast(app_id as varchar) as app_id,
     cast(affil_code as varchar) as affil_code,
-    cast(ip as varchar) as ip
+    cast(ip as varchar) as ip,
+    cast(json as varchar) as json
 from {{ source('featured_events', 'ticketclicks') }}

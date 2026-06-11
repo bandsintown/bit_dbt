@@ -8,7 +8,7 @@ sources:
       - name: featured_events
       - name: featured_events_changelog
       - name: pixelactivities
-      - name: pixel_impresion_v2
+      - name: pixel_impressions_v2
       - name: email_real_opens
       - name: ticketclicks
       - name: rsvps
@@ -16,10 +16,6 @@ sources:
       - name: alacarte_promoter_packages
       - name: alacarte_artists_events
       - name: alacarte_artists_packages
-
-#      - name: pixelactivities
-#      - name: pixel_impresion_v2
-#      - name: email_real_opens merge all of them by spark.
 
 
 

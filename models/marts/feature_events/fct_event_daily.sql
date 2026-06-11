@@ -24,11 +24,10 @@ with impression_daily as (
 clicks_daily as (
     select
         event_id,
-        date,
+        cast(clicked_at as date) as date,
         count(*) as ticket_clicks,
-        count(distinct user_id) as unique_users_click,
-        count(distinct ticket_seller_host) as distribution_partners,
-        count_if(lower(coalesce(fe_source, '')) = 'email') as email_clicks
+        count(distinct fan_id) as unique_users_click,
+        count_if(surface = 'email') as email_clicks
     from {{ ref('fct_event_click') }}
     group by 1, 2
 ),
@@ -54,7 +53,6 @@ select
     i.unique_users_impression,
     coalesce(c.ticket_clicks, 0) as ticket_clicks,
     coalesce(c.unique_users_click, 0) as unique_users_click,
-    coalesce(c.distribution_partners, 0) as distribution_partners,
     coalesce(c.email_clicks, 0) as email_clicks,
     coalesce(r.rsvp_events, 0) as rsvp_events,
     coalesce(r.unique_users_rsvp, 0) as unique_users_rsvp,

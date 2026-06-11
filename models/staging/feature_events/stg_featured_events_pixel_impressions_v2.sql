@@ -17,5 +17,5 @@ select
     cast(referer as varchar) as referer,
     cast(ip_address as varchar) as ip_address,
     cast(property as varchar) as property
-from {{ source('featured_events', 'pixel_impresion_v2') }}
+from {{ source('featured_events', 'pixel_impressions_v2') }}
 
