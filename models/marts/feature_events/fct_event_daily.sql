@@ -11,12 +11,12 @@ with impression_daily as (
     select
         event_id,
         artist_id,
-        date,
-        count_if(impression_channel = 'pixel') as pixel_impressions,
-        count_if(impression_channel = 'email') as email_impressions,
+        cast(impression_logged_at as date) as date,
+        count_if(surface != 'email') as pixel_impressions,
+        count_if(surface = 'email') as email_impressions,
         count(*) as total_impressions,
         count(distinct nonce) as unique_impressions,
-        count(distinct user_id) as unique_users_impression
+        count(distinct fan_id) as unique_users_impression
     from {{ ref('fct_event_impression') }}
     group by 1, 2, 3
 ),

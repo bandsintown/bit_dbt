@@ -13,6 +13,9 @@ with filtered as (
         fe_source,
         nonce,
         user_id,
+        pixel_source,
+        property,
+        impression_logged_at,
         impression_channel
     from {{ ref('int_featured_event_impressions') }}
     where nonce is not null
@@ -34,7 +37,9 @@ select
     fe_source,
     nonce,
     user_id,
+    pixel_source,
+    property,
+    impression_logged_at,
     impression_channel
 from deduped
 where row_num = 1
-

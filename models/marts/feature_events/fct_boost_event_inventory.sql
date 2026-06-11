@@ -11,7 +11,7 @@ with event_lifetime as (
     select
         event_id,
         count(*) as lifetime_impressions,
-        count(distinct user_id) as lifetime_unique_users
+        count(distinct fan_id) as lifetime_unique_users
     from {{ ref('fct_event_impression') }}
     group by 1
 )

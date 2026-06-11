@@ -16,7 +16,6 @@ select
     cast(replace(cast(datetime as varchar), 'T', ' ') as timestamp) as pixel_datetime,
     cast(referer as varchar) as referer,
     cast(ip_address as varchar) as ip_address,
-    cast(property as varchar) as property,
-    custom,
-    cast(json as varchar) as json
-from {{ source('featured_events', 'pixelactivities') }}
+    cast(property as varchar) as property
+from {{ source('featured_events', 'pixel_impresion_v2') }}
+

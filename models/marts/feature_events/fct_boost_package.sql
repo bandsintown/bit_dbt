@@ -29,12 +29,12 @@ with package_metrics as (
 user_exposure as (
     select
         bp.package_id,
-        fi.user_id,
+        fi.fan_id,
         count(distinct fi.event_id) as events_exposed
     from {{ ref('fct_event_impression') }} fi
     inner join {{ ref('int_boost_event_package') }} bp
         on bp.event_id = fi.event_id
-    where fi.user_id is not null
+    where fi.fan_id is not null
     group by 1, 2
 ),
 
