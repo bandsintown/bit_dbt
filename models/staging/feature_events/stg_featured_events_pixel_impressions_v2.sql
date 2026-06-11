@@ -25,7 +25,6 @@ select
     cast(param_json as varchar) as param_json,
     custom,
     cast(came_from as integer) as came_from,
-    featured_event_ids,
     cast(date as varchar) as date
 from {{ source('featured_events', 'pixel_impressions_v2') }}
 cross join unnest(featured_event_ids) as t(fe_id)
