@@ -7,7 +7,7 @@
 
 with pixel as (
     select
-        cast(trim(cast(artist_event_int_id as varchar)) as bigint) as artist_event_int_id,
+        artist_event_int_id,
         ds,
         fe_source,
         nonce,
@@ -20,7 +20,7 @@ with pixel as (
 ),
 pixel_v2 as (
     select
-        cast(trim(cast(artist_event_int_id as varchar)) as bigint) as artist_event_int_id,
+        artist_event_int_id,
         ds,
         fe_source,
         nonce,
@@ -33,7 +33,7 @@ pixel_v2 as (
 ),
 email as (
     select
-        cast(trim(cast(artist_event_int_id as varchar)) as bigint) as artist_event_int_id,
+        artist_event_int_id,
         ds,
         fe_source,
         nonce,

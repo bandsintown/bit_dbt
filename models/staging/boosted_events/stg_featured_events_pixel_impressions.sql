@@ -6,7 +6,7 @@
 }}
 
 select
-    cast(cast(artist_event_int_id as varchar) as integer) as artist_event_int_id,
+    cast(artist_event_int_id as varchar) as artist_event_int_id,
     cast(substr(cast(ds as varchar), 1, 10) as date) as ds,
     cast(fe_source as varchar) as fe_source,
     cast(source as varchar) as source,

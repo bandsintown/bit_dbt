@@ -6,10 +6,10 @@
 }}
 
 select
-    cast(trim(cast(event_id as varchar)) as integer) as event_id,
-    cast(trim(cast(artist_id as varchar)) as integer) as artist_id,
-    cast(trim(cast(venue_id as varchar)) as integer) as venue_id,
-    cast(trim(cast(festival_id as varchar)) as integer) as festival_id,
+    cast(event_id as varchar) as event_id,
+    cast(artist_id as varchar) as artist_id,
+    cast(venue_id as varchar) as venue_id,
+    cast(festival_id as varchar) as festival_id,
     cast(fe_source as varchar) as fe_source,
     cast(boost_start_date as varchar) as boost_start_date,
     cast(boost_end_date as varchar) as boost_end_date
