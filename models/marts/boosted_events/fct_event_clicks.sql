@@ -1,6 +1,7 @@
 {{
   config(
     materialized='table',
+    partition_by=['clicked_at'],
     tags=['feature_events', 'marts', 'kpi']
   )
 }}
@@ -10,6 +11,7 @@
 -- Carries artist_id (raw FK to dim_artist). No package_id or promoter_id columns.
 select
     row_number() over (
+        partition by cast(tc.click_datetime as date)
         order by tc.click_datetime, tc.artist_event_int_id, tc.user_id
     ) as click_id,
     tc.artist_event_int_id as event_id,

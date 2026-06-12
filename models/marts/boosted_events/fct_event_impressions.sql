@@ -49,4 +49,4 @@ inner join featured_events fe
     on fe.event_id = d.artist_event_int_id
 where fe.boost_start_date is not null
   and (fe.boost_end_date is null
-       or cast(d.ds as varchar) >= cast(fe.boost_start_date as varchar))
+       or cast(d.ds as date) >= fe.boost_start_date)

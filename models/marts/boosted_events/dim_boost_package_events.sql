@@ -46,7 +46,7 @@ event_details as (
         artist_event_int_id as event_id,
         artist_id,
         cast(venue_id as integer) as venue_id,
-        cast(starts_at as varchar) as event_date
+        cast(starts_at as date) as event_date
     from {{ ref('stg_events_batch_v2') }}
 ),
 
@@ -75,7 +75,7 @@ enriched as (
         vd.venue_capacity,
         pe.package_price,
         cast(pe.flight_start_date as date) as flight_start_date,
-        cast(from_iso8601_timestamp(ed.event_date) as date) as flight_end_date,
+        ed.event_date as flight_end_date,
         ed.artist_id,
         ad.artist_size_bucket,
         vt.venue_size_bucket,
