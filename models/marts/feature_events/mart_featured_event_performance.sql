@@ -8,7 +8,7 @@
 -- Mart: lifetime performance per featured event
 select
     d.event_id,
-    d.fe_sources,
+    d.fe_source,
     d.boost_start_date,
     d.boost_end_date,
     sum(f.pixel_impressions) as total_pixel_impressions,

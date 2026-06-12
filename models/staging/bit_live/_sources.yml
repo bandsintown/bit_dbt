@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: bit_live
+    database: "{{ target.database }}"
+    schema: bit_live
+    tables:
+      - name: artist_batch
+      - name: events_batch_v2
+      - name: venues_batch
+
+
+

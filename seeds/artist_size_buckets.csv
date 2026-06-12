@@ -1,0 +1,6 @@
+tracker_count_min,tracker_count_max,artist_size_bucket
+0,999,<1K
+1000,9999,1K-10K
+10000,99999,10K-100K
+100000,999999,100K-1M
+1000000,999999999,1M+

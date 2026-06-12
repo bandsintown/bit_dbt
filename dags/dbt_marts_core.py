@@ -18,6 +18,7 @@ from cosmos import (
     RenderConfig,
 )
 from cosmos.constants import TestBehavior
+from cosmos.operators.virtualenv import DbtSeedVirtualenvOperator
 
 DBT_PROJECT_LOCAL_PATH = "/usr/local/airflow/dags/dependencies/dbt/project"
 DBT_MANIFEST_PATH = os.path.join(DBT_PROJECT_LOCAL_PATH, "target", "manifest.json")
@@ -66,6 +67,19 @@ with DAG(
         },
     )
 
+    seed = DbtSeedVirtualenvOperator(
+        task_id="dbt_seed",
+        project_dir=DBT_PROJECT_LOCAL_PATH,
+        profile_config=ProfileConfig(
+            profile_name="bandsintown",
+            target_name="prod",
+            profiles_yml_filepath=DBT_PROFILES_PATH,
+        ),
+        install_deps=True,
+        py_requirements=DBT_VENV_REQUIREMENTS,
+        py_system_site_packages=False,
+    )
+
     staging_intermediate = DbtTaskGroup(
         group_id="staging_intermediate",
         render_config=RenderConfig(
@@ -86,5 +100,5 @@ with DAG(
         **common_config,
     )
 
-    staging_intermediate >> marts_feature_events
+    seed >> staging_intermediate >> marts_feature_events
 

@@ -12,8 +12,24 @@ with pixel as (
         fe_source,
         nonce,
         user_id,
+        source as pixel_source,
+        property,
+        pixel_datetime as impression_logged_at,
         'pixel' as impression_channel
     from {{ ref('stg_featured_events_pixel_impressions') }}
+),
+pixel_v2 as (
+    select
+        artist_event_int_id,
+        ds,
+        fe_source,
+        nonce,
+        user_id,
+        source as pixel_source,
+        property,
+        pixel_datetime as impression_logged_at,
+        'pixel_v2' as impression_channel
+    from {{ ref('stg_featured_events_pixel_impressions_v2') }}
 ),
 email as (
     select
@@ -22,6 +38,9 @@ email as (
         fe_source,
         nonce,
         user_id,
+        cast(null as varchar) as pixel_source,
+        cast(null as varchar) as property,
+        cast(timestamp_str as timestamp) as impression_logged_at,
         'email' as impression_channel
     from {{ ref('stg_featured_events_email_impressions') }}
     where lower(coalesce(event, '')) = 'real_open'
@@ -29,5 +48,7 @@ email as (
 )
 
 select * from pixel
+union all
+select * from pixel_v2
 union all
 select * from email
