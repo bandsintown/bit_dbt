@@ -41,7 +41,7 @@ email as (
         user_id,
         cast(null as varchar) as pixel_source,
         cast(null as varchar) as property,
-        cast(timestamp_str as timestamp) as impression_logged_at,
+        cast(from_iso8601_timestamp(timestamp_str) as timestamp) as impression_logged_at,
         'email' as impression_channel
     from {{ ref('stg_featured_events_email_impressions') }}
     where lower(coalesce(event, '')) = 'real_open'
