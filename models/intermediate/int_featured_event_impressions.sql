@@ -1,6 +1,6 @@
 {{
   config(
-    materialized='table',
+    materialized='view',
     full_refresh=true,
     tags=['feature_events', 'impressions', 'intermediate']
   )

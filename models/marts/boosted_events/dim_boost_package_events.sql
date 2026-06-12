@@ -46,7 +46,7 @@ event_details as (
         artist_event_int_id as event_id,
         artist_id,
         cast(venue_id as integer) as venue_id,
-        cast(starts_at as date) as event_date
+        cast(from_iso8601_timestamp(starts_at) as date) as event_date
     from {{ ref('stg_events_batch_v2') }}
 ),
 
