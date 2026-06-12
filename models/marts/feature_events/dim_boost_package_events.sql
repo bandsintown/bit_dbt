@@ -62,12 +62,9 @@ venue_details as (
 
 artist_details as (
     select
-        ab.artist_id,
-        asb.artist_size_bucket
-    from {{ ref('stg_artist_batch') }} ab
-    left join {{ ref('artist_size_buckets') }} asb
-        on coalesce(ab.tracker_count, 0) >= asb.tracker_count_min
-       and coalesce(ab.tracker_count, 0) <= asb.tracker_count_max
+        artist_id,
+        artist_size_bucket
+    from {{ ref('int_boost_artist') }}
 ),
 
 enriched as (
@@ -78,7 +75,7 @@ enriched as (
         vd.venue_capacity,
         pe.package_price,
         cast(pe.flight_start_date as date) as flight_start_date,
-        cast(ed.event_date as date) as flight_end_date,
+        cast(from_iso8601_timestamp(ed.event_date) as date) as flight_end_date,
         ed.artist_id,
         ad.artist_size_bucket,
         vt.venue_size_bucket,
@@ -122,4 +119,3 @@ select
     region,
     city
 from with_allocation
-

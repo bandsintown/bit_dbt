@@ -239,7 +239,7 @@ models:
       - name: surface
         description: "Impression surface: email, app_ios, app_android, or web. Derived from property field."
       - name: placement_type
-        description: "Whether the impression is boosted (pixel_v2, email) or organic (pixel v1)."
+        description: "Whether the impression is boosted or organic."
         tests:
           - accepted_values:
               values: ['boosted', 'organic']
@@ -265,7 +265,7 @@ models:
       - name: surface
         description: "Click surface: email, app_ios, app_android, web, or other. Derived from utm_medium."
       - name: placement_type
-        description: "boosted (email or utm_campaign contains feature_event), organic (known surface, no feature_event), or unknown."
+        description: "boosted, organic, or unknown."
         tests:
           - accepted_values:
               values: ['boosted', 'organic', 'unknown']
