@@ -1,14 +1,13 @@
 {{
   config(
     materialized='view',
-    full_refresh=true,
     tags=['feature_events', 'impressions', 'intermediate']
   )
 }}
 
 with pixel as (
     select
-        artist_event_int_id,
+        cast(trim(cast(artist_event_int_id as varchar)) as bigint) as artist_event_int_id,
         ds,
         fe_source,
         nonce,
@@ -21,7 +20,7 @@ with pixel as (
 ),
 pixel_v2 as (
     select
-        artist_event_int_id,
+        cast(trim(cast(artist_event_int_id as varchar)) as bigint) as artist_event_int_id,
         ds,
         fe_source,
         nonce,
@@ -34,7 +33,7 @@ pixel_v2 as (
 ),
 email as (
     select
-        artist_event_int_id,
+        cast(trim(cast(artist_event_int_id as varchar)) as bigint) as artist_event_int_id,
         ds,
         fe_source,
         nonce,
