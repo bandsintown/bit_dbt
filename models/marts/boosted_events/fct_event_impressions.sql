@@ -16,7 +16,7 @@ with featured_events as (
         artist_id,
         boost_start_date,
         boost_end_date
-    from {{ ref('dim_featured_event') }}
+    from {{ ref('stg_featured_events') }}
 )
 
 select
@@ -44,7 +44,7 @@ select
 
     coalesce(d.impression_logged_at, cast(d.ds as timestamp)) as impression_logged_at
 
-from {{ ref('dim_event_impression') }} d
+from {{ ref('int_featured_event_impressions') }} d
 inner join featured_events fe
     on fe.event_id = d.artist_event_int_id
 where fe.boost_start_date is not null

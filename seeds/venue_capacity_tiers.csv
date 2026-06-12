@@ -1,6 +1,0 @@
-venue_capacity_min,venue_capacity_max,venue_size_bucket,tier_price
-0,499,under500,50
-500,1499,under1500,100
-1500,2499,under2500,150
-2500,4999,under5000,250
-5000,999999999,above5000,500

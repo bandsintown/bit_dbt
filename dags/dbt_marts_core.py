@@ -1,6 +1,6 @@
 """
 DAG: dbt marts/core models.
-First runs staging+intermediate, then feature_events marts, then core marts.
+First runs staging+intermediate, then boosted_events marts, then core marts.
 Uses TriggerDagRunOperator to chain sub-DAGs in sequence.
 """
 
@@ -18,7 +18,7 @@ from cosmos import (
     RenderConfig,
 )
 from cosmos.constants import TestBehavior
-from cosmos.operators.virtualenv import DbtSeedVirtualenvOperator
+from cosmos.operators.virtualenv import DbtRunVirtualenvOperator, DbtSeedVirtualenvOperator
 
 DBT_PROJECT_LOCAL_PATH = "/usr/local/airflow/dags/dependencies/dbt/project"
 DBT_MANIFEST_PATH = os.path.join(DBT_PROJECT_LOCAL_PATH, "target", "manifest.json")
@@ -80,14 +80,20 @@ with DAG(
         py_system_site_packages=False,
     )
 
-    staging_intermediate = DbtTaskGroup(
-        group_id="staging_intermediate",
-        render_config=RenderConfig(
-            load_method=LoadMode.DBT_MANIFEST,
-            test_behavior=TestBehavior.NONE,
-            select=["path:models/staging", "path:models/intermediate"],
+    # Single task for all staging + intermediate models — avoids per-model virtualenv overhead.
+    # These are all views, so running them in one dbt invocation is much faster.
+    staging_intermediate = DbtRunVirtualenvOperator(
+        task_id="staging_intermediate",
+        project_dir=DBT_PROJECT_LOCAL_PATH,
+        profile_config=ProfileConfig(
+            profile_name="bandsintown",
+            target_name="prod",
+            profiles_yml_filepath=DBT_PROFILES_PATH,
         ),
-        **common_config,
+        select=["path:models/staging", "path:models/intermediate"],
+        install_deps=True,
+        py_requirements=DBT_VENV_REQUIREMENTS,
+        py_system_site_packages=False,
     )
 
     marts_feature_events = DbtTaskGroup(
@@ -95,7 +101,7 @@ with DAG(
         render_config=RenderConfig(
             load_method=LoadMode.DBT_MANIFEST,
             test_behavior=TestBehavior.NONE,
-            select=["path:models/marts/feature_events"],
+            select=["path:models/marts/boosted_events"],
         ),
         **common_config,
     )

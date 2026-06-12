@@ -1,0 +1,11 @@
+venue_capacity_min,venue_capacity_max,venue_size_bucket,tier_price
+0,499,under500,50
+500,1499,under1500,100
+1500,2499,under2500,150
+2500,4999,under5000,250
+5000,999999999,above5000,500
+EOFrm /Users/vidagharavian/PycharmProjects/bit-dbt/models/marts/feature_events/dim_featured_events_ticket_clicks.sql
+ls /Users/vidagharavian/PycharmProjects/bit-dbt/models/marts/feature_events/dim_featured_events_ticket_clicks.sql 2>&1
+test -f /Users/vidagharavian/PycharmProjects/bit-dbt/models/marts/feature_events/dim_featured_events_ticket_clicks.sql && echo "EXISTS" || echo "DELETED"
+cd /Users/vidagharavian/PycharmProjects/bit-dbt/seeds && mv came_from_traffic_source.csv seed_came_from_traffic_source.csv && mv venue_capacity_tiers.csv seed_venue_capacity_tiers.csv && mv artist_size_buckets.csv seed_artist_size_buckets.csv && ls -la *.csv
+mv /Users/vidagharavian/PycharmProjects/bit-dbt/seeds/came_from_traffic_source.csv /Users/vidagharavian/PycharmProjects/bit-dbt/seeds/seed_came_from_traffic_source.csv

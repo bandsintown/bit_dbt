@@ -48,8 +48,8 @@ select
     tc.click_datetime as clicked_at,
 
     cast(current_timestamp as timestamp) as updated_at
-from {{ ref('dim_featured_events_ticket_clicks') }} tc
-left join {{ ref('dim_featured_event') }} fe
+from {{ ref('int_featured_events_ticket_clicks') }} tc
+left join {{ ref('stg_featured_events') }} fe
     on fe.event_id = tc.artist_event_int_id
-left join {{ ref('came_from_traffic_source') }} cf
+left join {{ ref('seed_came_from_traffic_source') }} cf
     on cf.came_from = tc.came_from

@@ -22,7 +22,7 @@ enriched as (
     from {{ ref('stg_artist_batch') }} ab
     inner join artists_with_packages awp
         on awp.artist_id = ab.artist_id
-    left join {{ ref('artist_size_buckets') }} asb
+    left join {{ ref('seed_artist_size_buckets') }} asb
         on coalesce(ab.tracker_count, 0) >= asb.tracker_count_min
        and coalesce(ab.tracker_count, 0) <= asb.tracker_count_max
 )

@@ -1,11 +1,11 @@
 {{
   config(
-    materialized='table',
-    tags=['feature_events', 'dims']
+    materialized='view',
+    tags=['feature_events', 'clicks', 'intermediate']
   )
 }}
 
--- Dimension: deduplicated ticket clicks (one row per click)
+-- Intermediate: ticket clicks with utm fields extracted from json
 select
     artist_event_int_id,
     ds,
@@ -30,3 +30,4 @@ select
     cast(json_extract_scalar(json, '$.utm_campaign') as varchar) as utm_campaign
 from {{ ref('stg_featured_events_ticket_clicks') }}
 where artist_event_int_id is not null
+

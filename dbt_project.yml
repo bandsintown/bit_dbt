@@ -37,8 +37,8 @@ models:
       +write_compression: snappy
       core:
         +schema: analytics
-      feature_events:
-        +schema: bit_dbt_feature_events
+      boosted_events:
+        +schema: bit_dbt_boosted_events
 # Documentation
 vars:
   # Timezone for timestamp conversions
@@ -55,19 +55,19 @@ tests:
 # Seeds configuration
 seeds:
   bandsintown:
-    +schema: bit_dbt_feature_events
+    +schema: bit_dbt_boosted_events
     +quote_columns: false
-    came_from_traffic_source:
+    seed_came_from_traffic_source:
       +column_types:
         came_from: integer
         traffic_source_category: varchar
-    venue_capacity_tiers:
+    seed_venue_capacity_tiers:
       +column_types:
         venue_capacity_min: integer
         venue_capacity_max: integer
         venue_size_bucket: varchar
         tier_price: double
-    artist_size_buckets:
+    seed_artist_size_buckets:
       +column_types:
         tracker_count_min: integer
         tracker_count_max: integer

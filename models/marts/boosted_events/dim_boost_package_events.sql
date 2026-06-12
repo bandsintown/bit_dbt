@@ -90,7 +90,7 @@ enriched as (
         on vd.venue_id = ed.venue_id
     left join artist_details ad
         on ad.artist_id = ed.artist_id
-    left join {{ ref('venue_capacity_tiers') }} vt
+    left join {{ ref('seed_venue_capacity_tiers') }} vt
         on coalesce(vd.venue_capacity, 0) >= vt.venue_capacity_min
        and coalesce(vd.venue_capacity, 0) <= vt.venue_capacity_max
 ),
