@@ -3,6 +3,63 @@ version: 2
 models:
   # ── Dimensions ──────────────────────────────────────────────
 
+  - name: dim_boost_package_events
+    description: >
+      Authoritative bridge table for package to event relationships.
+      One row per package_id x event_id. Strict 1:1 between event_id and package_id.
+      Computes and LOCKS the venue-capacity revenue split at purchase time.
+      Also carries the HISTORICAL snapshot of artist_id and artist_size_bucket.
+    columns:
+      - name: package_id
+        description: "Package ID. FK to stg_alacarte_promoter_packages or stg_alacarte_artists_packages."
+        tests: [not_null]
+      - name: event_id
+        description: "Unique across the entire table — an event belongs to exactly one package forever."
+        tests: [not_null, unique]
+      - name: venue_id
+        description: "Venue ID where the event takes place."
+        tests: [not_null]
+      - name: venue_capacity
+        description: "Locked at purchase."
+        tests: [not_null]
+      - name: revenue_allocation_pct
+        description: "venue_capacity / SUM(venue_capacity). Locked at purchase. Sums to 1.0 per package."
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "revenue_allocation_pct > 0 and revenue_allocation_pct <= 1"
+      - name: revenue_allocated
+        description: "flat_rate_price x revenue_allocation_pct. Locked at purchase."
+        tests: [not_null]
+      - name: flight_start_date
+        description: "= purchase_date."
+        tests: [not_null]
+      - name: flight_end_date
+        description: "= event_date for this event."
+        tests: [not_null]
+      - name: artist_id
+        description: "Performer artist_id at flight start. Raw upstream key."
+        tests: [not_null]
+      - name: artist_size_bucket
+        description: "HISTORICAL bucket — locked at flight_start_date. For current bucket use dim_artist."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['<1K', '1K-10K', '10K-100K', '100K-1M', '1M+']
+      - name: venue_size_bucket
+        description: "Venue capacity tier: under500 ($50), under1500 ($100), under2500 ($150), under5000 ($250), above5000 ($500)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['under500', 'under1500', 'under2500', 'under5000', 'above5000']
+      - name: country
+        description: "Venue country."
+        tests: [not_null]
+      - name: region
+        description: "Venue region/state code."
+      - name: city
+        description: "Venue city."
+
   - name: dim_event_impression
     description: >
       Dimension: deduplicated impressions (one row per nonce).
@@ -31,6 +88,31 @@ models:
         tests:
           - accepted_values:
               values: ['pixel', 'pixel_v2', 'email']
+
+  - name: dim_promoter
+    description: >
+      Promoter identity with surrogate primary key.
+      Resolves the collision between raw artist_id and raw promoter_id
+      (overlapping integer spaces) by generating a deterministic surrogate
+      from (purchaser_type, source_id).
+      purchaser_type = 'promoter': source_id = raw promoter_id.
+      purchaser_type = 'artist': source_id = raw artist_id (artist self-purchase).
+    columns:
+      - name: promoter_id
+        description: "Surrogate primary key. Generated from (purchaser_type, source_id)."
+        tests: [unique, not_null]
+      - name: purchaser_type
+        description: "'promoter' for standard promoter entities, 'artist' for artist_alacarte self-purchases."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['promoter', 'artist']
+      - name: source_id
+        description: "Raw upstream ID. When purchaser_type = 'artist', equals dim_artist.artist_id. When purchaser_type = 'promoter', equals platform.promoter.promoter_id."
+        tests: [not_null]
+      - name: promoter_name
+        description: "Display name for the promoter. For promoter type, from package name. For artist type, from package description."
+        tests: [not_null]
 
   - name: dim_featured_event
     description: >
@@ -270,173 +352,6 @@ models:
               values: ['no_activity', 'xs', 'small', 'medium', 'large', 'xl']
       - name: updated_at
         description: "Row-level timestamp of when the record was last materialized."
-
-  - name: fct_boost_inventory_daily
-    description: >
-      Fact: one row per date.
-      Daily counts of active/new boosted events, promoters, and packages.
-    columns:
-      - name: date
-        description: "Calendar date."
-        tests: [not_null]
-      - name: boost_events_active
-        description: "Count of distinct events with an active boost on this date."
-      - name: boost_events_new
-        description: "Count of distinct events whose boost started on this date."
-      - name: boost_promoter_count_active
-        description: "Count of distinct promoters with at least one active boost on this date."
-      - name: boost_packages_active
-        description: "Count of distinct packages with at least one active boost on this date."
-      - name: updated_at
-        description: "Row-level timestamp of when the record was last materialized."
-
-  - name: fct_boost_package_event
-    description: >
-      Fact: one row per package × event.
-      Aggregated impressions, clicks, RSVPs, revenue allocation, and eCPC/eCPM at the event level.
-    columns:
-      - name: package_id
-        description: "Promoter package ID. FK to stg_alacarte_promoter_packages.id."
-        tests: [not_null]
-      - name: event_id
-        description: "Internal featured event ID. FK to dim_featured_event.event_id."
-        tests: [not_null]
-      - name: promoter_id
-        description: "Promoter ID from the package."
-      - name: package_name
-        description: "Name of the promoter package."
-      - name: artist_id
-        description: "Performer artist ID. FK to dim_artist."
-      - name: boost_start_date
-        description: "Boost campaign start date for the event."
-      - name: boost_end_date
-        description: "Boost campaign end date for the event."
-      - name: boost_revenue_allocated
-        description: "Revenue allocated to this event from the campaign flat fee."
-      - name: total_impressions
-        description: "Total impressions for this event."
-      - name: total_unique_impressions
-        description: "Total unique impressions (distinct nonces) for this event."
-      - name: total_clicks
-        description: "Total ticket clicks for this event."
-      - name: total_rsvps
-        description: "Total RSVPs for this event."
-      - name: total_unique_users
-        description: "Total distinct fans who received impressions."
-      - name: first_activity_date
-        description: "Earliest date of any activity for this event."
-      - name: last_activity_date
-        description: "Latest date of any activity for this event."
-      - name: active_days
-        description: "Number of distinct dates with activity."
-      - name: boost_ecpc_event
-        description: "Effective cost per click at the event level: revenue / clicks. Null if no clicks."
-      - name: boost_ecpm_event
-        description: "Effective cost per mille at the event level: (revenue / impressions) × 1000. Null if no impressions."
-      - name: updated_at
-        description: "Row-level timestamp of when the record was last materialized."
-
-  - name: fct_boost_package_event_daily
-    description: >
-      Fact: one row per package × event × date.
-      Daily breakdown of impressions, clicks, and RSVPs per package-event.
-    columns:
-      - name: package_id
-        description: "Promoter package ID."
-      - name: event_id
-        description: "Internal featured event ID."
-      - name: date
-        description: "Calendar date."
-
-  - name: fct_boost_package
-    description: >
-      Fact: one row per package.
-      Aggregated KPIs: revenue, eCPC, eCPM, goal status, and repeat exposure rate.
-    columns:
-      - name: package_id
-        description: "Primary key. Promoter package ID."
-        tests: [unique, not_null]
-      - name: promoter_id
-        description: "Promoter ID who owns this package."
-      - name: package_name
-        description: "Name of the promoter package."
-      - name: package_status
-        description: "Current package status (e.g. active, completed)."
-      - name: package_type
-        description: "Package type (e.g. self-serve, managed)."
-      - name: boost_revenue_recognized
-        description: "Total revenue recognized across all events in the package."
-      - name: total_impressions
-        description: "Total impressions across all events in the package."
-      - name: total_unique_impressions
-        description: "Total unique impressions across all events."
-      - name: total_clicks
-        description: "Total ticket clicks across all events."
-      - name: total_rsvps
-        description: "Total RSVPs across all events."
-      - name: event_count
-        description: "Number of distinct events in this package."
-      - name: first_activity_date
-        description: "Earliest activity date across all events."
-      - name: last_activity_date
-        description: "Latest activity date across all events."
-      - name: boost_ecpc_package
-        description: "Effective cost per click at the package level: revenue / clicks. Null if no clicks."
-      - name: boost_ecpm_package
-        description: "Effective cost per mille at the package level: (revenue / impressions) × 1000. Null if no impressions."
-      - name: boost_ecpc_meets_target
-        description: "Whether all events in the package met their CPC goal."
-      - name: boost_repeat_exposure_rate
-        description: "Ratio of fans exposed to more than one event in the package to total unique fans."
-      - name: updated_at
-        description: "Row-level timestamp of when the record was last materialized."
-
-  - name: fct_boost_package_daily
-    description: >
-      Fact: one row per package × date.
-      Cumulative eCPC/eCPM and daily pacing metrics for trend analysis.
-    columns:
-      - name: package_id
-        description: "Promoter package ID."
-        tests: [not_null]
-      - name: promoter_id
-        description: "Promoter ID who owns this package."
-      - name: package_name
-        description: "Name of the promoter package."
-      - name: package_status
-        description: "Current package status."
-      - name: package_type
-        description: "Package type."
-      - name: date
-        description: "Calendar date."
-        tests: [not_null]
-      - name: daily_impressions
-        description: "Impressions on this date across all events in the package."
-      - name: daily_unique_impressions
-        description: "Unique impressions on this date."
-      - name: daily_clicks
-        description: "Ticket clicks on this date."
-      - name: daily_rsvps
-        description: "RSVPs on this date."
-      - name: daily_unique_users
-        description: "Distinct fans receiving impressions on this date."
-      - name: cumulative_impressions
-        description: "Running total of impressions from the package start to this date."
-      - name: cumulative_clicks
-        description: "Running total of clicks from the package start to this date."
-      - name: boost_ecpc_cumulative
-        description: "Cumulative eCPC: revenue / cumulative_clicks. Null if no clicks yet."
-      - name: boost_ecpm_cumulative
-        description: "Cumulative eCPM: (revenue / cumulative_impressions) × 1000. Null if no impressions yet."
-      - name: days_elapsed
-        description: "Number of days since the first activity date for this package."
-      - name: avg_daily_impressions
-        description: "Average daily impressions: cumulative_impressions / days_elapsed."
-      - name: avg_daily_clicks
-        description: "Average daily clicks: cumulative_clicks / days_elapsed."
-      - name: updated_at
-        description: "Row-level timestamp of when the record was last materialized."
-
   # ── Marts ───────────────────────────────────────────────────
 
   - name: mart_featured_event_performance

@@ -1,0 +1,56 @@
+{{
+  config(
+    materialized='view',
+    tags=['bit_live', 'venues', 'staging']
+  )
+}}
+
+select
+    cast(id as varchar) as venue_id,
+    cast(name as varchar) as name,
+    cast(address as varchar) as address,
+    cast(city_name as varchar) as city_name,
+    cast(region_code as varchar) as region_code,
+    cast(country_name as varchar) as country_name,
+    cast(postal_code as varchar) as postal_code,
+    cast(latitude as varchar) as latitude,
+    cast(longitude as varchar) as longitude,
+    cast(deleted as varchar) as deleted,
+    cast(modification_date as varchar) as modification_date,
+    cast(verified as integer) as verified,
+    cast(latlong as varchar) as latlong,
+    cast(website as varchar) as website,
+    cast(phone_number as varchar) as phone_number,
+    cast(media_id as integer) as media_id,
+    cast(location as varchar) as location,
+    cast(description as varchar) as description,
+    cast(video_media_id as integer) as video_media_id,
+    cast(age_requirement as integer) as age_requirement,
+    cast(capacity as integer) as capacity,
+    cast(facebook_page as varchar) as facebook_page,
+    cast(youtube_channel as varchar) as youtube_channel,
+    cast(instagram_user as varchar) as instagram_user,
+    cast(twitter_handle as varchar) as twitter_handle,
+    cast(is_managed as integer) as is_managed,
+    cast(type as varchar) as type,
+    cast(fan_venue_media_modification_date as varchar) as fan_venue_media_modification_date,
+    cast(num_events as integer) as num_events,
+    cast(tracker_count as integer) as tracker_count,
+    tracking,
+    cast(is_premium as boolean) as is_premium,
+    cast(timezone as varchar) as timezone,
+    cast(banner_media_id as integer) as banner_media_id,
+    cast(from_google_place as integer) as from_google_place,
+    cast(alert_radius as integer) as alert_radius,
+    cast(test_venue as integer) as test_venue,
+    cast(tiktok_handle as varchar) as tiktok_handle,
+    name_variations,
+    cast(is_niva as boolean) as is_niva,
+    cast(normalized_country as varchar) as normalized_country,
+    cast(normalized_city as varchar) as normalized_city,
+    cast(normalized_region_code as varchar) as normalized_region_code,
+    cast(country_iso_code as varchar) as country_iso_code,
+    cast(currency_code as varchar) as currency_code,
+    cast(continent as varchar) as continent
+from {{ source('bit_live', 'venues_batch') }}
+
