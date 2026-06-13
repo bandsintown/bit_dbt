@@ -8,15 +8,7 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from cosmos import (
-    DbtTaskGroup,
-    ExecutionConfig,
-    ExecutionMode,
-    LoadMode,
-    ProfileConfig,
-    ProjectConfig,
-    RenderConfig,
-)
+from cosmos import DbtTaskGroup, ExecutionConfig, ExecutionMode, LoadMode, ProfileConfig, ProjectConfig, RenderConfig
 from cosmos.constants import TestBehavior
 from cosmos.operators.virtualenv import DbtRunVirtualenvOperator, DbtSeedVirtualenvOperator
 
@@ -45,27 +37,6 @@ with DAG(
     max_active_runs=1,
     tags=["dbt", "athena", "core", "marts", "cosmos"],
 ) as dag:
-
-    common_config = dict(
-        project_config=ProjectConfig(
-            project_name="bandsintown",
-            manifest_path=DBT_MANIFEST_PATH,
-        ),
-        execution_config=ExecutionConfig(
-            execution_mode=ExecutionMode.VIRTUALENV,
-            dbt_project_path=DBT_PROJECT_LOCAL_PATH,
-        ),
-        profile_config=ProfileConfig(
-            profile_name="bandsintown",
-            target_name="prod",
-            profiles_yml_filepath=DBT_PROFILES_PATH,
-        ),
-        operator_args={
-            "install_deps": True,
-            "py_requirements": DBT_VENV_REQUIREMENTS,
-            "py_system_site_packages": False,
-        },
-    )
 
     seed = DbtSeedVirtualenvOperator(
         task_id="dbt_seed",
@@ -96,14 +67,34 @@ with DAG(
         py_system_site_packages=False,
     )
 
+    # Per-model task group for marts — venv_cache_path reuses the virtualenv
+    # across tasks on the same worker instead of reinstalling each time.
     marts_feature_events = DbtTaskGroup(
-        group_id="marts_feature_events",
+        group_id="marts_boosted_events",
         render_config=RenderConfig(
             load_method=LoadMode.DBT_MANIFEST,
             test_behavior=TestBehavior.NONE,
             select=["path:models/marts/boosted_events"],
         ),
-        **common_config,
+        project_config=ProjectConfig(
+            project_name="bandsintown",
+            manifest_path=DBT_MANIFEST_PATH,
+        ),
+        execution_config=ExecutionConfig(
+            execution_mode=ExecutionMode.VIRTUALENV,
+            dbt_project_path=DBT_PROJECT_LOCAL_PATH,
+        ),
+        profile_config=ProfileConfig(
+            profile_name="bandsintown",
+            target_name="prod",
+            profiles_yml_filepath=DBT_PROFILES_PATH,
+        ),
+        operator_args={
+            "install_deps": True,
+            "py_requirements": DBT_VENV_REQUIREMENTS,
+            "py_system_site_packages": False,
+            "venv_cache_path": "/tmp/dbt-venv-cache",
+        },
     )
 
     seed >> staging_intermediate >> marts_feature_events
